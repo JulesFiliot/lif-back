@@ -1,10 +1,9 @@
 class User {
-    constructor(id, username, email, firstName, lastName) {
-      this.id = id;
+    constructor(username, email, user_achievements, bio) {
       this.username = username;
       this.email = email;
-      this.firstName = firstName;
-      this.lastName = lastName;
+      this.user_achievements = user_achievements;
+      this.bio = bio;
     }
   }
   
