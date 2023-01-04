@@ -29,3 +29,23 @@ exports.addUser = (req,res) => {
         }
     });
 }
+
+exports.removeUserAchievement = (req,res) => {
+    user_service.removeUserAchievement(req,res,(error) => {
+        if (error) {
+            res.send(error);
+        } else {
+            return 200;
+        }
+    });
+}
+
+exports.addUserAchievement = (req,res) => {
+    user_service.addUserAchievement(req,res,(error) => {
+        if (error) {
+            res.send(error);
+        } else {
+            return 200;
+        }
+    });
+}

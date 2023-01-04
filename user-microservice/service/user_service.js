@@ -51,3 +51,34 @@ exports.addUser = (req, res, callback) => {
         return callback("Error while creating user.", null);
     }
 };
+
+exports.removeUserAchievement = (req, res, callback) => {
+    const userId = req.body.user_id;
+    const achievementsId = req.body.achievements_id
+    db.ref('users/'+userId).once('value', (data) => {
+        if(data.val()) {
+            let list_achievements = data.val().user_achievements;
+            list_achievements = list_achievements.splice(list_achievements.indexOf(achievementsId), 1)
+            const userDto = new UserDTO(data.val().username, data.val().email, list_achievements, data.val().bio);
+            return callback("", data.val());
+        } else {
+            return callback("The id given in parameter is either wrong or doesn't exist.", null);
+        }
+    });
+    if (userDto) {
+        db.ref('users/').push(userDto)
+        return callback(null, userDto);
+    } else {
+        return callback("Error while creating user.", null);
+    }
+};
+
+exports.addUserAchievement = (req, res, callback) => {
+    const userDto = new UserDTO (req.body.username, req.body.email, req.body.user_achievements, req.body.bio);
+    if (userDto) {
+        db.ref('users/').push(userDto)
+        return callback(null, userDto);
+    } else {
+        return callback("Error while creating user.", null);
+    }
+};
