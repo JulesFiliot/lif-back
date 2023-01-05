@@ -1,6 +1,7 @@
+require('dotenv').config();
 const UserDTO = require('../dto/user_dto');
 const admin = require('firebase-admin');
-const serviceAccount = require('C:\\Users\\matth\\tokens\\lif-inc-firebase-adminsdk-s8pyr-e523e811f5.json');
+const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH);
 const firebaseConfig = {
     credential: admin.credential.cert(serviceAccount),
     apiKey: "AIzaSyCmmvusffkyhITJBWJuN-eN58XQKBwCRDQ",
@@ -55,16 +56,16 @@ exports.addUser = (req, res, callback) => {
 
 exports.removeUserAchievement = (req, res, callback) => {
     const userId = req.body.user_id;
-    const achievementId = req.body.achievement_id;
+    const userAchievementId = req.body.user_achievement_id;
     db.ref('users/' + userId).once('value', (data) => {
         if(data.val() && data.val().user_achievements) {
             let list_achievements = data.val().user_achievements;
             if(list_achievements.length >= 1) {
-                var index = list_achievements.indexOf(parseInt(achievementId));
+                var index = list_achievements.indexOf(userAchievementId);
                 if (index !== -1) {
                     list_achievements.splice(index, 1);
                 } else return callback("The id given in parameter is either wrong or doesn't exist.", null);
-            } else if(list_achievements[0] == achievementId){
+            } else if(list_achievements[0] == userAchievementId){
                 list_achievements = [];
             }
             db.ref('users/'+userId).update({'user_achievements': list_achievements})
@@ -78,15 +79,16 @@ exports.removeUserAchievement = (req, res, callback) => {
 
 exports.addUserAchievement = (req, res, callback) => {
     const userId = req.body.user_id;
-    const achievementId = parseInt(req.body.achievement_id);
+    const userAchievementId = req.body.user_achievement_id;
+    console.log("youuuuuhuou")
     let list_achievements = [];
     db.ref('users/'+userId).once('value', (data) => {
         if(data.val()) {
             if(data.val().user_achievements) {
                 list_achievements = data.val().user_achievements;
             }
-            if (list_achievements.indexOf(achievementId) == -1) {
-                list_achievements.push(achievementId)
+            if (list_achievements.indexOf(userAchievementId) == -1) {
+                list_achievements.push(userAchievementId)
             } else {
                 return callback("The user already have this achievement.", null);
             }
