@@ -1,13 +1,10 @@
 class AchievementDTO {
-    constructor(name, desc, rank, popularity = null) {
+    constructor(name, desc, rank, sub_id) {
         this.name = name;
         this.desc = desc;
         this.rank = rank;
-        this.popularity = popularity;
-        this.date = date;
-        this.location = location;
-        this.image = image;
+        this.sub_id = sub_id;
     }
   }
-  
-  module.exports = AchievementDTO;
+
+module.exports = AchievementDTO;
