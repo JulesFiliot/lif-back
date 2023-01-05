@@ -25,7 +25,7 @@ exports.addUser = (req,res) => {
         if (error) {
             res.send(error);
         } else {
-            return 200;
+            res.sendStatus(200);
         }
     });
 }
@@ -35,7 +35,7 @@ exports.removeUserAchievement = (req,res) => {
         if (error) {
             res.send(error);
         } else {
-            return 200;
+            res.sendStatus(200);
         }
     });
 }
@@ -45,7 +45,7 @@ exports.addUserAchievement = (req,res) => {
         if (error) {
             res.send(error);
         } else {
-            return 200;
+            res.sendStatus(200);
         }
     });
 }
