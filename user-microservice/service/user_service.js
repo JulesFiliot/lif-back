@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const UserDTO = require('../dto/user_dto');
 const admin = require('firebase-admin');
 const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH);
@@ -15,13 +16,6 @@ const firebaseConfig = {
 
 const app = admin.initializeApp(firebaseConfig);
 const db = admin.database();
-
-
-
-/*users = {
-    1:{name:"Tao Pai Pai", email:"taopai.pai@gmail.com", xp:6945, achievments:[5,9,24,32,97]},
-    2:{name:"Kakyoin", email:"kakyoin@gmail.com", xp:5287, achievments:[69,25,4,87,61]}
-};*/
 
 exports.getUser = (req, res ,callback) => {
     db.ref('users/'+req.params.id).once('value', (data) => {
