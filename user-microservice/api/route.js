@@ -10,6 +10,8 @@ let upload = multer();
 router.get("/getUser/:id", upload.array(), Controller.getUser);
 router.get("/getAllUsers/", upload.array(), Controller.getAllUsers);
 router.post("/addUser/", Controller.addUser);
+router.post("/removeUserAchievement/", Controller.removeUserAchievement);
+router.post("/addUserAchievement/", Controller.addUserAchievement);
 
 //router.post('/notify', Controller.notif);
 module.exports = router;

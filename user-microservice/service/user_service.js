@@ -43,6 +43,7 @@ exports.getAllUsers = (req, res, callback) => {
 };
 
 exports.addUser = (req, res, callback) => {
+    console.log(req.body);
     const userDto = new UserDTO (req.body.username, req.body.email, req.body.user_achievements, req.body.bio);
     if (userDto) {
         db.ref('users/').push(userDto)
@@ -50,4 +51,50 @@ exports.addUser = (req, res, callback) => {
     } else {
         return callback("Error while creating user.", null);
     }
+};
+
+exports.removeUserAchievement = (req, res, callback) => {
+    const userId = req.body.user_id;
+    const achievementId = req.body.achievement_id;
+    db.ref('users/' + userId).once('value', (data) => {
+        if(data.val() && data.val().user_achievements) {
+            let list_achievements = data.val().user_achievements;
+            if(list_achievements.length >= 1) {
+                var index = list_achievements.indexOf(parseInt(achievementId));
+                if (index !== -1) {
+                    list_achievements.splice(index, 1);
+                } else return callback("The id given in parameter is either wrong or doesn't exist.", null);
+            } else if(list_achievements[0] == achievementId){
+                list_achievements = [];
+            }
+            db.ref('users/'+userId).update({'user_achievements': list_achievements})
+            const userDto = new UserDTO(data.val().username, data.val().email, list_achievements, data.val().bio);
+            return callback("", userDto);
+        } else {
+            return callback("The id given in parameter is either wrong or doesn't exist.", null);
+        }
+    })
+};
+
+exports.addUserAchievement = (req, res, callback) => {
+    const userId = req.body.user_id;
+    const achievementId = parseInt(req.body.achievement_id);
+    let list_achievements = [];
+    db.ref('users/'+userId).once('value', (data) => {
+        if(data.val()) {
+            if(data.val().user_achievements) {
+                list_achievements = data.val().user_achievements;
+            }
+            if (list_achievements.indexOf(achievementId) == -1) {
+                list_achievements.push(achievementId)
+            } else {
+                return callback("The user already have this achievement.", null);
+            }
+            db.ref('users/'+userId).update({'user_achievements': list_achievements})
+            const userDto = new UserDTO(data.val().username, data.val().email, list_achievements, data.val().bio);
+            return callback("", userDto);
+        } else {
+            return callback("The id given in parameter is either wrong or doesn't exist.", null);
+        }
+    })
 };
