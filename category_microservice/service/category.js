@@ -17,27 +17,28 @@ const firebaseConfig = {
 const app = admin.initializeApp(firebaseConfig);
 
 exports.getCategories = (req,res,callback) => {
+    let response = "";
     const ref = admin.database().ref('categories/')
-    ref.once('value', (data) => {
-        console.log(data.val());
+    ref.once('value', (snapshot) => {
+        response = snapshot.val();
+        callback("",response);
       });
-    callback("",'ok');
 }
 
 exports.getSubcats = (req,res,callback) => {
+    let response = "";
     if (req.params.cat_id) {
         const ref = admin.database().ref('subcategories').orderByChild('parent_cat_id').equalTo(req.params.cat_id);
         ref.once('value', (snapshot) => {
-            let val = snapshot.val();
-            console.log(val);
+            response = snapshot.val();
+            callback("",response);
         });
-        callback("",'ok');
     } else { //get all subcats
         const ref = admin.database().ref('subcategories/')
-        ref.once('value', (data) => {
-            console.log(data.val());
+        ref.once('value', (snapshot) => {
+            response = snapshot.val();
+            callback("",response);
         });
-        callback("",'ok');
     }
 }
 
@@ -45,12 +46,12 @@ exports.createCategory = (req,res,callback) => {
     const category = new CategoryDTO(req.body.name);
     const ref = admin.database().ref('categories/');
     ref.push(category);
-    callback("",'ok');
+    callback("",'created');
 }
 
 exports.createSubcat = (req,res,callback) => {
     const subcategory = new SubcategoryDTO(req.body.name, req.body.parent_cat_id);
     const ref = admin.database().ref('subcategories/')
     ref.push(subcategory);
-    callback("",'ok');
+    callback("",'created');
 }

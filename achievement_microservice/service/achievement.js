@@ -3,8 +3,6 @@ const UserDTO = require('../dto/user-dto');
 const AchievementDTO = require('../dto/achievement-dto');
 const UserAchievementDTO = require('../dto/user-achievement-dto');
 const Achievement = require('../entity/achievement');
-const axios = require('axios');
-const init_duel_url = "http://127.0.0.1:8084/duel/init/";
 
 const admin = require('firebase-admin');
 const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH); //add path to service_account_key.json
@@ -25,15 +23,16 @@ exports.createAchievement = (req,res,callback) => {
     const achievement = new AchievementDTO(req.body.achievement.name,req.body.achievement.desc,req.body.achievement.rank, req.body.achievement.sub_id);
     const ref = admin.database().ref('achievements/')
     ref.push(achievement);
-    callback("","ok");
+    callback("","created");
 }
 
 exports.getAchievements = (req,res,callback) => {
+    let response = "";
     const ref = admin.database().ref('achievements/')
-    ref.once('value', (data) => {
-        console.log(data.val());
+    ref.once('value', (snapshot) => {
+        response = snapshot.val();
+        callback("",response);
       });
-    callback("",'ok');
 }
 
 exports.addUserAchievement = (req,res,callback) => {
@@ -43,8 +42,7 @@ exports.addUserAchievement = (req,res,callback) => {
 
     //request to user microservice to add to user_achievements list
 
-
-    callback("",'ok');
+    callback("",'added');
 }
 
 exports.removeUserAchievement = (req,res,callback) => {
@@ -53,14 +51,22 @@ exports.removeUserAchievement = (req,res,callback) => {
 
     //request to user microservice to remove from user_achievements list
 
-    callback("",'ok');
+    callback("",'removed');
 }
 
 exports.getUserAchievements = (req,res,callback) => {
-    const ref = admin.database().ref('user_achievements').orderByChild('user_id').equalTo(req.body.user_id);
-    ref.once('value', (snapshot) => {
-        let val = snapshot.val();
-        console.log(val);
-    });
-    callback("",'ok');
+    let response = "";
+    if (req.params.user_id) {
+        const ref = admin.database().ref('user_achievements').orderByChild('user_id').equalTo(req.params.user_id);
+        ref.once('value', (snapshot) => {
+            response = snapshot.val();
+            callback("", response);
+        });
+    } else {
+        const ref = admin.database().ref('user_achievements');
+        ref.once('value', (snapshot) => {
+            response = snapshot.val();
+            callback("", response);
+        });
+    }
 }
