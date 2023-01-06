@@ -25,7 +25,7 @@ exports.login = (req, res, callback) => {
     const password = req.body.password;
 
     console.log("AUTH: ", username, password);
-    bcrypt.hash(username, 10, null).then((hash) => {
+    bcrypt.hash(username, null, null).then((hash) => {
         try {
             db.ref('authentification/').once('value', (data) => {
                 
