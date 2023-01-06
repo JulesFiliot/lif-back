@@ -1,0 +1,3 @@
+./user_microservice/.env
+./achievement_micros/.env
+./category_microservice/.env
