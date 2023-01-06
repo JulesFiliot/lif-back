@@ -74,7 +74,6 @@ exports.removeUserAchievement = (req, res, callback) => {
 exports.addUserAchievement = (req, res, callback) => {
     const userId = req.body.user_id;
     const userAchievementId = req.body.user_achievement_id;
-    console.log("youuuuuhuou")
     let list_achievements = [];
     db.ref('users/'+userId).once('value', (data) => {
         if(data.val()) {
