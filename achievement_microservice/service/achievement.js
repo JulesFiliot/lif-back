@@ -5,6 +5,7 @@ const UserAchievementDTO = require('../dto/user-achievement-dto');
 const Achievement = require('../entity/achievement');
 const axios = require('axios');
 const admin = require('firebase-admin');
+const { getStorage } = require('firebase-admin/storage');
 const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH); //add path to service_account_key.json
 const firebaseConfig = {
     credential: admin.credential.cert(serviceAccount),
@@ -19,6 +20,7 @@ const firebaseConfig = {
 const userServiceRoute = "http://localhost:3001/"
 
 const app = admin.initializeApp(firebaseConfig);
+const bucket = getStorage().bucket();
 
 exports.createAchievement = (req,res,callback) => {
     const achievement = new AchievementDTO(req.body.achievement.name,req.body.achievement.desc,req.body.achievement.rank, req.body.achievement.sub_id);
@@ -36,21 +38,54 @@ exports.getAchievements = (req,res,callback) => {
       });
 }
 
-exports.addUserAchievement = (req,res,callback) => {
-    const user_achievement = new UserAchievementDTO(req.body.user_achievement.user_id,req.body.user_achievement.achievement_id ,req.body.user_achievement.date ,req.body.user_achievement.location, req.body.user_achievement.image);
+function saveImagePromise(image) {
+    return new Promise((resolve, reject) => {
+        const store_image = bucket.file(image.originalname);
+        store_image.save(image.buffer, { contentType: image.mimetype }, (error) => {
+            if (error) {
+                console.error(error);
+            } else {
+                console.log('Image uploaded to storage.');
+                const signedURLconfig = { action: 'read', expires: '01-01-2030' }; //to adjust
+                const signedURLArray = store_image.getSignedUrl(signedURLconfig);
+                signedURLArray.then((response)=>{
+                    resolve(response[0]);
+                })
+            }
+        });
+    });
+}
+
+function saveUserAchievement(user_achievement) {
     const ref = admin.database().ref('user_achievements/')
     const user_achievement_ref = ref.push(user_achievement);
-    console.log("-----",user_achievement_ref.key)
-
-    //request to user microservice to add to user_achievements list
+        //request to user microservice to add to user_achievements list
     let payload = {
-        user_id : req.body.user_achievement.user_id,
+        user_id : user_achievement.user_id,
         user_achievement_id : user_achievement_ref.key
     };
     axios.post(userServiceRoute+'add-user-achievement/', payload).catch((err)=>{
         //console.log(err)
     });
-    callback("",'added');
+    return
+}
+
+exports.addUserAchievement = (req,res,callback) => {
+    const req_data = JSON.parse(req.body.user_achievement)
+    const image = req.file;
+    if (image) {
+        saveImagePromise(image).then((image_url) => {
+            const user_achievement = new UserAchievementDTO(req_data.user_id,req_data.achievement_id ,req_data.date ,req_data.location, image_url);
+            saveUserAchievement(user_achievement);
+            callback("","added with image");
+            return
+        })
+    } else {
+        const user_achievement = new UserAchievementDTO(req_data.user_id,req_data.achievement_id ,req_data.date ,req_data.location);
+        saveUserAchievement(user_achievement);
+        callback("","added");
+        return;
+    }
 }
 
 exports.removeUserAchievement = (req,res,callback) => {
