@@ -21,7 +21,17 @@ exports.getAllUsers = (req,res) => {
 }
 
 exports.addUser = (req,res) => {
-    user_service.addUser(req,res,(error) => {
+    user_service.addUser(req,res,(error,data) => {
+        if (error) {
+            res.send(error);
+        } else {
+            res.send(data);
+        }
+    });
+}
+
+exports.editBio = (req,res) => {
+    user_service.editBio(req,res,(error) => {
         if (error) {
             res.send(error);
         } else {
