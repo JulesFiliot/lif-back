@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const axios = require('axios');
 const crypto = require('crypto-js');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -23,49 +24,55 @@ const db = admin.database();
 exports.login = (req, res, callback) => {
     const username = req.body.username;
     const password = req.body.password;
-
-    console.log("AUTH: ", username, password);
-    bcrypt.hash(username, null, null).then((hash) => {
-        try {
-            db.ref('authentification/').once('value', (data) => {
-                
-                console.log("data: ",data.val());
-                const username_hash_b64 = buffer.Buffer.from(hash).toString('base64')
-                console.log("username_hash_b64: ", username_hash_b64);
-                const hashed_pwd_b64 = data.val()[username_hash_b64];
-                console.log("hashed_pwd_b64",hashed_pwd_b64);
-                const hashed_pwd = buffer.Buffer.from(hashed_pwd_b64, 'base64').toString('utf8');
-                console.log("hashed_pwd",hashed_pwd);
-                bcrypt.compare(password, hashed_pwd).then((isMatch) => {
-                    if (isMatch) {
-                        console.log('Password and username are correct');
-                    } else {
-                        return callback("Username or password incorrect.", null);
-                    };
-                });
-            });
-        } catch (e) {
+    const username_b64 = buffer.Buffer.from(username).toString('base64')
+    db.ref('authentication/' + username_b64).once('value', (data) => {
+        const hashed_pwd_b64 = data.val();
+        if (!(hashed_pwd_b64)){
             return callback("Username or password incorrect.", null);
         }
-    })
+        const hashed_pwd = buffer.Buffer.from(hashed_pwd_b64, 'base64').toString('utf8');
+        bcrypt.compare(password, hashed_pwd).then((isMatch) => {
+            if (isMatch) {
+                const payload = {
+                    user: username
+                };
+                const secret = 'your-secret';
+                const options = {
+                    expiresIn: '1h'
+                };
+                return callback('',jwt.sign(payload, secret, options));
+            } else {
+                return callback("Username or password incorrect.", null);
+            };
+        });
+    });
+};
 
+//TODO: username in base64 for firebase "users/"
 
-    //TODO: check password in database (currently hardcoded)
-    /*bcrypt.hash(password, 10)
-    .then((hash) => {
-        
-    })*/
-
-    // If the credentials are valid, create a JWT for the user.
-    const payload = {
-        user: username
-    };
-    const secret = 'your-secret';
-    const options = {
-        expiresIn: '1h'
-    };
-
-    return callback('',jwt.sign(payload, secret, options));
+exports.register = (req, res, callback) => {
+    const {username, password, email} = req.body;
+    if (!username || !password || !email) return callback("Empty entry, please complete each entry on the registration form.", null);
+    // check if username already exists
+    const username_b64 = buffer.Buffer.from(username).toString('base64');
+    db.ref('authentication/' + username_b64).once('value', data => {
+        if (data.val()) {
+            return callback("Username already exists.", null);
+        }
+        const payload = {
+            username: username, 
+            email: email, 
+        };
+        axios.post("http://127.0.0.1:3001/add-user/", payload).then(() => {
+            bcrypt.hash(password, 10).then((hash)=>{
+                hash_pwd_b64 = buffer.Buffer.from(hash).toString('base64');
+                db.ref('authentication/').update({[username_b64]:hash_pwd_b64});
+                return callback(null, "New user added: " + payload);
+            });
+        }).catch((err)=>{
+            return callback("Error while adding user.",null);
+        });
+    });
 };
 
 exports.verify = (req, res, callback) => {
