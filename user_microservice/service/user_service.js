@@ -65,10 +65,12 @@ exports.addUser = (req, res, callback) => {
     }
 };
 
-/*
-exports.editBio = (req, res, callback => {
-    
-});*/
+
+exports.editBio = (req, res, callback) => {
+    db.ref('users/' + req.body.user_id).update({'bio':req.body.bio}).then(()=> {
+        return callback(null,"OK");
+    });
+};
 
 exports.removeUserAchievement = (req, res, callback) => {
     const userId = req.body.user_id;
@@ -84,7 +86,7 @@ exports.removeUserAchievement = (req, res, callback) => {
             } else if(list_achievements[0] == userAchievementId){
                 list_achievements = [];
             }
-            db.ref('users/'+userId).update({'user_achievements': list_achievements})
+            db.ref('users/'+userId).update({'user_achievements': list_achievements});
             const userDto = new UserDTO(data.val().username, data.val().email, list_achievements, data.val().bio);
             return callback("", userDto);
         } else {
