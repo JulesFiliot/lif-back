@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const buffer = require('buffer');
 const UserDTO = require('../dto/user_dto');
 const RegisterUserDTO = require('../dto/register_user_dto');
 const admin = require('firebase-admin');
@@ -21,7 +22,15 @@ const db = admin.database();
 exports.getUser = (req, res ,callback) => {
     db.ref('users/'+req.params.id).once('value', (data) => {
         if(data.val()) {
-            return callback("", data.val());
+            const utf8_dict = Object.fromEntries(
+                    Object.entries(data.val()).map(([key, value]) => {
+                    if (key === 'username') {
+                        value = buffer.Buffer.from(value, 'base64').toString('utf-8');
+                    }
+                    return [key, value];
+                })
+            );
+            return callback("", utf8_dict);
         } else {
             return callback("The id given in parameter is either wrong or doesn't exist.", null);
         }
@@ -31,7 +40,13 @@ exports.getUser = (req, res ,callback) => {
 exports.getAllUsers = (req, res, callback) => {
     db.ref('users/').once('value', (data) => {
         if (data.val()){
-            return callback("", data.val());
+            utf8_dict = Object.fromEntries(
+                Object.entries(data.val()).map(([key, value]) => {
+                    value.username = buffer.Buffer.from(value.username, 'base64').toString('utf-8');
+                    return [key, value];
+                })
+            );
+            return callback("", utf8_dict);
         } else {
             return callback("Error while fetching all users: there might be no user.", null);
         }
@@ -39,7 +54,6 @@ exports.getAllUsers = (req, res, callback) => {
 };
 
 exports.addUser = (req, res, callback) => {
-    console.log(req.body);
     const registerUserDto = new RegisterUserDTO (req.body.username, req.body.email);
     if (registerUserDto) {
         db.ref('users/').push(registerUserDto)
