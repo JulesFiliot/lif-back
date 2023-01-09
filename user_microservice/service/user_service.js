@@ -96,7 +96,9 @@ exports.removeUserAchievement = (req, res, callback) => {
 exports.addUserAchievement = (req, res, callback) => {
     const userId = req.body.user_id;
     const userAchievementId = req.body.user_achievement_id;
+    const subcat_id = req.body.subcat_id;
     let list_achievements = [];
+    let this_subcat_count = 1;
     db.ref('users/'+userId).once('value', (data) => {
         if(data.val()) {
             if(data.val().user_achievements) {
@@ -107,7 +109,10 @@ exports.addUserAchievement = (req, res, callback) => {
             } else {
                 return callback("The user already have this achievement.", null);
             }
-            db.ref('users/'+userId).update({'user_achievements': list_achievements})
+            if(data.val().subcat_count && data.val().subcat_count[subcat_id]) {
+                this_subcat_count += data.val().subcat_count[subcat_id];
+            }
+            db.ref('users/'+userId).update({'user_achievements': list_achievements, "subcat_count": {[subcat_id]: this_subcat_count}});
             const userDto = new UserDTO(data.val().username, data.val().email, list_achievements, data.val().bio);
             return callback("", userDto);
         } else {

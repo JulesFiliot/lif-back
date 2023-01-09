@@ -1,4 +1,5 @@
 ./user_microservice/.env
 ./achievement_micros/.env
 ./category_microservice/.env
+./thread_microservice/.env
 ./authentication_microservice/.env

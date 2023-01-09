@@ -1,9 +1,9 @@
 class AchievementDTO {
-    constructor(name, desc, rank, sub_id) {
+    constructor(name, desc, rank, subcat_id) {
         this.name = name;
         this.desc = desc;
         this.rank = rank;
-        this.sub_id = sub_id;
+        this.subcat_id = subcat_id;
     }
   }
 

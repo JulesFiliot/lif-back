@@ -23,7 +23,7 @@ const app = admin.initializeApp(firebaseConfig);
 const bucket = getStorage().bucket();
 
 exports.createAchievement = (req,res,callback) => {
-    const achievement = new AchievementDTO(req.body.achievement.name,req.body.achievement.desc,req.body.achievement.rank, req.body.achievement.sub_id);
+    const achievement = new AchievementDTO(req.body.achievement.name,req.body.achievement.desc,req.body.achievement.rank, req.body.achievement.subcat_id);
     const ref = admin.database().ref('achievements/')
     ref.push(achievement);
     callback("","created");
@@ -56,35 +56,39 @@ function saveImagePromise(image) {
     });
 }
 
-function saveUserAchievement(user_achievement) {
+function saveUserAchievement(user_achievement,subcat_id) {
     const ref = admin.database().ref('user_achievements/')
-    const user_achievement_ref = ref.push(user_achievement);
+    return ref.push(user_achievement).then((user_achievement_ref) => {
         //request to user microservice to add to user_achievements list
-    let payload = {
-        user_id : user_achievement.user_id,
-        user_achievement_id : user_achievement_ref.key
-    };
-    axios.post(userServiceRoute+'add-user-achievement/', payload).catch((err)=>{
-        //console.log(err)
+        let payload = {
+            user_id : user_achievement.user_id,
+            user_achievement_id : user_achievement_ref.key,
+            subcat_id : subcat_id
+        };
+        return axios.post(userServiceRoute+'add-user-achievement/', payload)
+        .catch((err)=>{
+            //console.log(err)
+        });
     });
-    return
 }
 
 exports.addUserAchievement = (req,res,callback) => {
-    const req_data = JSON.parse(req.body.user_achievement)
+    const req_data = req.body;
     const image = req.file;
     if (image) {
         saveImagePromise(image).then((image_url) => {
-            const user_achievement = new UserAchievementDTO(req_data.user_id,req_data.achievement_id ,req_data.date ,req_data.location, image_url);
-            saveUserAchievement(user_achievement);
-            callback("","added with image");
-            return
+            const user_achievement = new UserAchievementDTO(req_data.user_achievement.user_id,req_data.user_achievement.achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location, image_url);
+            saveUserAchievement(user_achievement,req_data.subcat_id).then(() => {
+                callback("","added with image");
+                return
+            });
         })
     } else {
-        const user_achievement = new UserAchievementDTO(req_data.user_id,req_data.achievement_id ,req_data.date ,req_data.location);
-        saveUserAchievement(user_achievement);
-        callback("","added");
-        return;
+        const user_achievement = new UserAchievementDTO(req_data.user_achievement.user_id,req_data.user_achievement.achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location);
+        saveUserAchievement(user_achievement, req_data.subcat_id).then(() => {
+            callback("","added");
+            return;
+        });
     }
 }
 
