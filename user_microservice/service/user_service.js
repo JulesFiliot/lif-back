@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const UserDTO = require('../dto/user_dto');
+const RegisterUserDTO = require('../dto/register_user_dto');
 const admin = require('firebase-admin');
 const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH);
 const firebaseConfig = {
@@ -39,10 +40,10 @@ exports.getAllUsers = (req, res, callback) => {
 
 exports.addUser = (req, res, callback) => {
     console.log(req.body);
-    const userDto = new UserDTO (req.body.username, req.body.email, req.body.user_achievements, req.body.bio);
-    if (userDto) {
-        db.ref('users/').push(userDto)
-        return callback(null, userDto);
+    const registerUserDto = new RegisterUserDTO (req.body.username, req.body.email);
+    if (registerUserDto) {
+        db.ref('users/').push(registerUserDto)
+        return callback(null, registerUserDto);
     } else {
         return callback("Error while creating user.", null);
     }
