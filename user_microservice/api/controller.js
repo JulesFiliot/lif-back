@@ -21,11 +21,11 @@ exports.getAllUsers = (req,res) => {
 }
 
 exports.addUser = (req,res) => {
-    user_service.addUser(req,res,(error) => {
+    user_service.addUser(req,res,(error,data) => {
         if (error) {
             res.send(error);
         } else {
-            res.sendStatus(200);
+            res.send(data);
         }
     });
 }

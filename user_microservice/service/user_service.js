@@ -56,12 +56,19 @@ exports.getAllUsers = (req, res, callback) => {
 exports.addUser = (req, res, callback) => {
     const registerUserDto = new RegisterUserDTO (req.body.username, req.body.email);
     if (registerUserDto) {
-        db.ref('users/').push(registerUserDto)
-        return callback(null, registerUserDto);
+        db.ref('users/').push(registerUserDto).then((user) => {
+            console.log(user.key);
+            return callback(null, user.key);
+        });
     } else {
         return callback("Error while creating user.", null);
     }
 };
+
+/*
+exports.editBio = (req, res, callback => {
+    
+});*/
 
 exports.removeUserAchievement = (req, res, callback) => {
     const userId = req.body.user_id;

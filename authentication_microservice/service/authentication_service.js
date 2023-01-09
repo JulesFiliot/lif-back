@@ -25,8 +25,9 @@ exports.login = (req, res, callback) => {
     const username = req.body.username;
     const password = req.body.password;
     const username_b64 = buffer.Buffer.from(username).toString('base64')
-    db.ref('authentication/' + username_b64).once('value', (data) => {
-        const hashed_pwd_b64 = data.val();
+    db.ref('authentication/').orderByChild('username').equalTo(username_b64).once('value', (data) => {
+        const hashed_pwd_b64 = Object.values(data.val())[0].password;
+        console.log(hashed_pwd_b64);
         if (!(hashed_pwd_b64)){
             return callback("Username or password incorrect.", null);
         }
@@ -48,7 +49,6 @@ exports.login = (req, res, callback) => {
     });
 };
 
-//TODO: username in base64 for firebase "users/"
 
 exports.register = (req, res, callback) => {
     const {username, password, email} = req.body;
@@ -63,10 +63,11 @@ exports.register = (req, res, callback) => {
             username: username_b64, 
             email: email, 
         };
-        axios.post("http://127.0.0.1:3001/add-user/", payload).then(() => {
+        axios.post("http://127.0.0.1:3001/add-user/", payload).then((id) => {
             bcrypt.hash(password, 10).then((hash)=>{
+                console.log(id.data);
                 hash_pwd_b64 = buffer.Buffer.from(hash).toString('base64');
-                db.ref('authentication/').update({[username_b64]:hash_pwd_b64});
+                db.ref('authentication/').update({[id.data]:{password:hash_pwd_b64, username:username_b64}});
                 return callback(null, "New user added: " + payload);
             });
         }).catch((err)=>{
