@@ -66,6 +66,7 @@ exports.addUser = (req, res, callback) => {
 exports.removeUserAchievement = (req, res, callback) => {
     const userId = req.body.user_id;
     const userAchievementId = req.body.user_achievement_id;
+    const subcat_id = req.body.subcat_id;
     db.ref('users/' + userId).once('value', (data) => {
         if(data.val() && data.val().user_achievements) {
             let list_achievements = data.val().user_achievements;
@@ -77,7 +78,8 @@ exports.removeUserAchievement = (req, res, callback) => {
             } else if(list_achievements[0] == userAchievementId){
                 list_achievements = [];
             }
-            db.ref('users/'+userId).update({'user_achievements': list_achievements})
+            let this_subcat_count = data.val().subcat_count[subcat_id] - 1;
+            db.ref('users/'+userId).update({'user_achievements': list_achievements, "subcat_count": {[subcat_id]: this_subcat_count}});
             const userDto = new UserDTO(data.val().username, data.val().email, list_achievements, data.val().bio);
             return callback("", userDto);
         } else {

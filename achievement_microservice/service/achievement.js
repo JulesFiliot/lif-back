@@ -99,7 +99,8 @@ exports.removeUserAchievement = (req,res,callback) => {
     //request to user microservice to remove from user_achievements list
     let payload = {
         user_id : req.body.user_achievement.user_id,
-        user_achievement_id : req.body.user_achievement.user_achievement_id
+        user_achievement_id : req.body.user_achievement.user_achievement_id,
+        subcat_id : req.body.subcat_id
     };
     axios.post(userServiceRoute+'remove-user-achievement/', payload).catch((err)=>{
         //console.log(err)
