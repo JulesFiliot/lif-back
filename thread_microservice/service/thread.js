@@ -26,13 +26,22 @@ exports.getThreads = (req,res,callback) => {
 
 exports.createThread = (req,res,callback) => {
     try {
-        const thread = new ThreadDTO(req.body.thread.parent_id, req.body.thread.subcategory_id, req.body.thread.message);
+        const thread = new ThreadDTO(req.body.thread.parent_id, req.body.thread.subcat_id, req.body.thread.message);
         const ref = admin.database().ref('threads/');
         ref.push(thread);
         callback("",'created');
     } catch {
         callback(true)
     }
+}
+
+exports.getSubcatThreads = (req,res,callback) => {
+    let response = "";
+    const ref = admin.database().ref('threads').orderByChild('subcat_id').equalTo(req.params.subcat_id);
+    ref.once('value', (snapshot) => {
+        response = snapshot.val();
+        callback("",response);
+    });
 }
 
 exports.voteThread = (req,res,callback) => {
