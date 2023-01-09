@@ -60,7 +60,7 @@ exports.register = (req, res, callback) => {
             return callback("Username already exists.", null);
         }
         const payload = {
-            username: username, 
+            username: username_b64, 
             email: email, 
         };
         axios.post("http://127.0.0.1:3001/add-user/", payload).then(() => {

@@ -1,7 +1,7 @@
-const authentification_service = require('../service/authentification_service');
+const authentication_service = require('../service/authentication_service');
 
 exports.login = (req,res) => {
-    authentification_service.login(req,res,(error,data) => {
+    authentication_service.login(req,res,(error,data) => {
     if (error) {
             res.send(error);
         } else {
@@ -11,7 +11,7 @@ exports.login = (req,res) => {
 }
 
 exports.register = (req,res) => {
-    authentification_service.register(req,res,(error,data) => {
+    authentication_service.register(req,res,(error,data) => {
     if (error) {
             res.send(error);
         } else {
@@ -21,7 +21,7 @@ exports.register = (req,res) => {
 }
 
 exports.verify = (req,res) => {
-    authentification_service.verify(req,res,(error,data) => {
+    authentication_service.verify(req,res,(error,data) => {
     if (error) {
             res.send(error);
         } else {
