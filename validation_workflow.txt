@@ -1,0 +1,16 @@
+title Validation workflow
+
+entryspacing 0.6
+
+
+group #lightgreen achievement validation
+
+Client->Achievement: /vote/:achievement
+activate Achievement #grey
+Achievement->Achievement: add vote
+group #green valid #white [upvotes >= treshold]
+Achievement->Achievement: validate achievement:\n remove votes, official=true
+end
+Achievement->Client: voted
+deactivate Achievement
+end
