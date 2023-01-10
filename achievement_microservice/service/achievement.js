@@ -168,8 +168,12 @@ exports.voteAchievement = (req,res,callback) => {
         } else {
             vote_list_ref.transaction(currentArray => {
                 if (currentArray) {
-                  const newArray = currentArray.concat([user_id]);
-                  return newArray;
+                    if (currentArray.includes(user_id)) {
+                        return currentArray;
+                    } else {
+                        const newArray = currentArray.concat([user_id]);
+                        return newArray;
+                    }
                 }
                 return [user_id];
             }).then(()=>{
