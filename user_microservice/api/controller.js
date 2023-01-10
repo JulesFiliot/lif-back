@@ -59,3 +59,13 @@ exports.addUserAchievement = (req,res) => {
         }
     });
 }
+
+exports.getValidUserCount = (req,res) => {
+    user_service.getValidUserCount(req,res,(error, data) => {
+        if (error) {
+            res.send(error);
+        } else {
+            res.status(200).json(data);
+        }
+    });
+}

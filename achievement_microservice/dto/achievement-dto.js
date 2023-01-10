@@ -5,7 +5,7 @@ class AchievementDTO {
         this.rank = rank;
         this.subcat_id = subcat_id;
         this.popularity = 0;
-        this.unofficial = true;
+        this.official = false;
     }
   }
 
