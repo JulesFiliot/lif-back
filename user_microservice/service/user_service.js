@@ -124,3 +124,10 @@ exports.addUserAchievement = (req, res, callback) => {
         }
     })
 };
+
+exports.getValidUserCount = (req, res, callback) => {
+    db.ref('users/').orderByChild('subcat_count/'+req.params.subcat_id).startAt(5).once('value', (data) => {
+        valid_users = data.val();
+        return callback("", {count:valid_users ? Object.keys(valid_users).length : 0});
+    });
+};
