@@ -160,6 +160,10 @@ exports.voteAchievement = (req,res,callback) => {
                   return newArray;
                 }
                 return null;
+              }).then(()=>{
+                validateIfNeeded(achievement_id).then(()=>{
+                    callback("",'voted')
+                });
               });
         } else {
             vote_list_ref.transaction(currentArray => {
@@ -168,10 +172,29 @@ exports.voteAchievement = (req,res,callback) => {
                   return newArray;
                 }
                 return [user_id];
+            }).then(()=>{
+                validateIfNeeded(achievement_id).then(()=>{
+                    callback("",'voted')
+                });
             });
         }
-        callback("",'voted');
     } catch {
         callback(true)
     }
 }
+
+function validateIfNeeded(achievement_id) {
+    //check if achievement popularity is higher than 10% of valid users (users with a subcat_count >= 5 )
+    const ref = admin.database().ref('achievements/'+achievement_id);
+    return ref.once('value', (snapshot) => {
+        const achievement = snapshot.val();
+        axios.get(userServiceRoute+'valid-user-count/'+achievement.sub_id).then((response) => {
+            const valid_users_count = response.data.valid_users_count;
+            const treshold = 3; //0.1*valid_users_count
+            if (achievement.upvote_ids.length >= treshold) {
+                //remove votes and set official to true
+                return ref.update({upvote_ids:null,downvote_ids:null,official:true})
+            }
+        })
+    });
+};

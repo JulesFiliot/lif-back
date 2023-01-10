@@ -12,6 +12,6 @@ router.get("/get-achievements", Controller.getAchievements);
 router.post("/add-user-achievement", upload.single('image'), Controller.addUserAchievement);
 router.post("/remove-user-achievement", Controller.removeUserAchievement);
 router.get("/get-user-achievements/:user_id", Controller.getUserAchievements);
-router.post("/vote/:achievement", Controller.voteAchievement);
+router.post("/vote/:achievement_id", Controller.voteAchievement);
 
 module.exports = router;
