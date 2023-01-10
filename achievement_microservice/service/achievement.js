@@ -202,3 +202,29 @@ function validateIfNeeded(achievement_id) {
         })
     });
 };
+
+exports.getSubcatAchievements = (req,res,callback) => {
+    try{
+        let response = "";
+        const ref = admin.database().ref('achievements').orderByChild('sub_id').equalTo(req.params.subcat_id);
+        ref.once('value', (snapshot) => {
+            response = snapshot.val();
+            const entries = Object.entries(response);
+            for (let [key, value] of entries) {
+                console.log(key, value);
+                if (value.upvote_ids && value.upvote_ids.includes(req.params.user_id)) {
+                    response[key].voted = "up";
+                } else if (value.downvote_ids && value.downvote_ids.includes(req.params.user_id)) {
+                    response[key].voted = "down";
+                } else {
+                    response[key].voted = false;
+                }
+                delete response[key].upvote_ids;
+                delete response[key].downvote_ids;
+            }
+            callback("", response);
+        });
+    } catch (e) {
+        callback(true);
+    }
+}
