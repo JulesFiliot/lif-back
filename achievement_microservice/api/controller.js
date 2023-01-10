@@ -49,3 +49,13 @@ exports.getUserAchievements = (req,res)=>{
         }
     })
 }
+
+exports.voteAchievement = (req,res)=>{
+    achievement.voteAchievement(req,res,(error,data)=>{
+        if (error){
+            res.send("error");
+        }else{
+            res.send(data);
+        }
+    })
+}

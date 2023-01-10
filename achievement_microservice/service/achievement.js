@@ -6,6 +6,7 @@ const Achievement = require('../entity/achievement');
 const axios = require('axios');
 const admin = require('firebase-admin');
 const { getStorage } = require('firebase-admin/storage');
+const { response } = require('express');
 const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH); //add path to service_account_key.json
 const firebaseConfig = {
     credential: admin.credential.cert(serviceAccount),
@@ -59,15 +60,20 @@ function saveImagePromise(image) {
 function saveUserAchievement(user_achievement,subcat_id) {
     const ref = admin.database().ref('user_achievements/')
     return ref.push(user_achievement).then((user_achievement_ref) => {
-        //request to user microservice to add to user_achievements list
-        let payload = {
-            user_id : user_achievement.user_id,
-            user_achievement_id : user_achievement_ref.key,
-            subcat_id : subcat_id
-        };
-        return axios.post(userServiceRoute+'add-user-achievement/', payload)
-        .catch((err)=>{
-            //console.log(err)
+        return admin.database().ref('achievements/'+user_achievement.achievement_id+'/popularity').transaction((currentValue) => {
+            return (currentValue || 0) + 1;
+        })
+        .then(() => {
+            //request to user microservice to add to user_achievements list
+            let payload = {
+                user_id : user_achievement.user_id,
+                user_achievement_id : user_achievement_ref.key,
+                subcat_id : subcat_id
+            };
+            return axios.post(userServiceRoute+'add-user-achievement/', payload)
+            .catch((err)=>{
+                //console.log(err)
+            });
         });
     });
 }
@@ -93,19 +99,28 @@ exports.addUserAchievement = (req,res,callback) => {
 }
 
 exports.removeUserAchievement = (req,res,callback) => {
-    const ref = admin.database().ref('user_achievements/'+req.body.user_achievement.user_achievement_id)
-    ref.remove();
-
-    //request to user microservice to remove from user_achievements list
-    let payload = {
-        user_id : req.body.user_achievement.user_id,
-        user_achievement_id : req.body.user_achievement.user_achievement_id,
-        subcat_id : req.body.subcat_id
-    };
-    axios.post(userServiceRoute+'remove-user-achievement/', payload).catch((err)=>{
-        //console.log(err)
+    const ref = admin.database().ref('user_achievements/'+req.body.user_achievement.user_achievement_id);
+    ref.once('value', (snapshot) => {
+        const achievement_id = snapshot.val().achievement_id;
+        ref.remove()
+        .then(() => {
+            return admin.database().ref('achievements/'+achievement_id+'/popularity').transaction(currentValue => {
+                return currentValue - 1;;
+            })
+        })
+        .then(() => {
+            //request to user microservice to remove from user_achievements list
+            let payload = {
+                user_id : req.body.user_achievement.user_id,
+                user_achievement_id : req.body.user_achievement.user_achievement_id,
+                subcat_id : req.body.subcat_id
+            };
+            axios.post(userServiceRoute+'remove-user-achievement/', payload).catch((err)=>{
+                //console.log(err)
+            });
+            callback("",'removed');
+        })
     });
-    callback("",'removed');
 }
 
 exports.getUserAchievements = (req,res,callback) => {
@@ -122,5 +137,41 @@ exports.getUserAchievements = (req,res,callback) => {
             response = snapshot.val();
             callback("", response);
         });
+    }
+}
+
+exports.voteAchievement = (req,res,callback) => {
+    //{user_id, vote: 'up' ou 'down', 'cancel': true ou false}
+    try {
+        const achievement_id = req.params.achievement_id;
+        const user_id = req.body.user_id;
+        const vote = req.body.vote.toLowerCase();
+        const cancel = req.body.cancel ? req.body.cancel : false;
+        let vote_list_ref = "";
+        if (vote == 'up') {
+            vote_list_ref = admin.database().ref('achievements/'+achievement_id+'/upvote_ids');
+        } else if (vote == 'down') {
+            vote_list_ref = admin.database().ref('achievements/'+achievement_id+'/downvote_ids');
+        }
+        if (cancel) {
+            vote_list_ref.transaction(currentArray => {
+                if (currentArray) {
+                  const newArray = currentArray.filter(value => value !== user_id);
+                  return newArray;
+                }
+                return null;
+              });
+        } else {
+            vote_list_ref.transaction(currentArray => {
+                if (currentArray) {
+                  const newArray = currentArray.concat([user_id]);
+                  return newArray;
+                }
+                return [user_id];
+            });
+        }
+        callback("",'voted');
+    } catch {
+        callback(true)
     }
 }
