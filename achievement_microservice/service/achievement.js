@@ -31,12 +31,41 @@ exports.createAchievement = (req,res,callback) => {
 }
 
 exports.getAchievements = (req,res,callback) => {
-    let response = "";
-    const ref = admin.database().ref('achievements/')
-    ref.once('value', (snapshot) => {
-        response = snapshot.val();
-        callback("",response);
-      });
+    try {
+        const ref = admin.database().ref('achievements/');
+        const filter = req.query.filter;
+        if (filter) {
+            const [field, operator, value] = filter.split('%');
+            if(operator === 'eq'){
+                ref.orderByChild(field).equalTo(value).on("value", function(snapshot) {
+                    const data = snapshot.val()
+                    callback("",data);
+                });
+            }
+            else if(operator === 'lt'){
+                ref.orderByChild(field).endAt(value).on("value", function(snapshot) {
+                    const data = snapshot.val()
+                    callback("",data);
+                });
+            }
+            else if(operator === 'gt'){
+                ref.orderByChild(field).startAt(value).on("value", function(snapshot) {
+                    const data = snapshot.val()
+                    callback("",data);
+                });
+            }
+            else{
+                callback('invalid operator');
+            }
+        } else {
+            ref.once('value', (snapshot) => {
+                const data = snapshot.val();
+                callback("",data);
+            });
+        }
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 function saveImagePromise(image) {
@@ -124,20 +153,39 @@ exports.removeUserAchievement = (req,res,callback) => {
 }
 
 exports.getUserAchievements = (req,res,callback) => {
-    let response = "";
-    if (req.params.user_id) {
-        const ref = admin.database().ref('user_achievements').orderByChild('user_id').equalTo(req.params.user_id);
-        ref.once('value', (snapshot) => {
-            response = snapshot.val();
-            callback("", response);
-        });
-    } else {
-        const ref = admin.database().ref('user_achievements');
-        ref.once('value', (snapshot) => {
-            response = snapshot.val();
-            callback("", response);
-        });
-    }
+    const ref = admin.database().ref('user_achievements/');
+    const filter = req.query.filter;
+        if (filter) {
+            const [field, operator, value] = filter.split('%');
+            if(operator === 'eq'){
+                ref.orderByChild(field).equalTo(value).on("value", function(snapshot) {
+                    const data = snapshot.val()
+                    callback("",data);
+                });
+            }
+            else if(operator === 'lt'){
+                ref.orderByChild(field).endAt(value).on("value", function(snapshot) {
+                    const data = snapshot.val()
+                    callback("",data);
+                });
+            }
+            else if(operator === 'gt'){
+                ref.orderByChild(field).startAt(value).on("value", function(snapshot) {
+                    const data = snapshot.val()
+                    callback("",data);
+                });
+            }
+            else{
+                callback('invalid operator');
+            }
+        } else {
+            //TODO:
+            // /!\ returning every users achievements should not be accessible to users (user should only see his own achievements)
+            ref.once('value', (snapshot) => {
+                const data = snapshot.val();
+                callback("",data);
+            });
+        }
 }
 
 exports.voteAchievement = (req,res,callback) => {
@@ -206,24 +254,53 @@ function validateIfNeeded(achievement_id) {
 exports.getSubcatAchievements = (req,res,callback) => {
     try{
         let response = "";
-        const ref = admin.database().ref('achievements').orderByChild('sub_id').equalTo(req.params.subcat_id);
+        let ref = admin.database().ref('achievements').orderByChild('sub_id').equalTo(req.params.subcat_id);
+        const filter = req.query.filter;
         ref.once('value', (snapshot) => {
             response = snapshot.val();
             const entries = Object.entries(response);
+            const user_id = req.params.user_id ? req.params.user_id.toString() : null;
             for (let [key, value] of entries) {
-                console.log(key, value);
-                if (value.upvote_ids && value.upvote_ids.includes(req.params.user_id)) {
-                    response[key].voted = "up";
-                } else if (value.downvote_ids && value.downvote_ids.includes(req.params.user_id)) {
-                    response[key].voted = "down";
-                } else {
-                    response[key].voted = false;
+                if (user_id) {
+                    if (Object.hasOwn(response[key],'owner_ids')) {
+                    }
+                    if (!(Object.hasOwn(response[key],'owner_ids') && response[key]['owner_ids'].includes(user_id))) {
+                        response[key].owned = false;
+                    } else {
+                        response[key].owned = true;
+                    }
+                    if (value.upvote_ids && value.upvote_ids.includes(user_id)) {
+                        response[key].voted = "up";
+                    } else if (value.downvote_ids && value.downvote_ids.includes(user_id)) {
+                        response[key].voted = "down";
+                    } else {
+                        response[key].voted = false;
+                    }
                 }
                 delete response[key].upvote_ids;
                 delete response[key].downvote_ids;
+                delete response[key].owner_ids;
+                if (filter) {
+                    const [field, operator, value] = filter.split('%');
+                    if(operator === 'eq'){
+                        if (response[key][field].toString() != value){
+                            delete response[key];
+                        }
+                    }
+                    else if(operator === 'lt'){
+                        response.slice(0,value);
+                    }
+                    else if(operator === 'gt'){
+                        response.slice(value);
+                    }
+                    else{
+                        return callback('invalid operator');
+                    }
+                }
             }
             callback("", response);
         });
+
     } catch (e) {
         callback(true);
     }
