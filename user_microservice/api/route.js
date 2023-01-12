@@ -27,6 +27,6 @@ router.post("/add-user/", Controller.addUser);
 router.post("/edit-bio/", Controller.editBio);
 router.post("/remove-user-achievement/", Controller.removeUserAchievement);
 router.post("/add-user-achievement/", Controller.addUserAchievement);
-
+router.get("/valid-user-count/:subcat_id",Controller.getValidUserCount);
 //router.post('/notify', Controller.notif);
 module.exports = router;
