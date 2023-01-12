@@ -3,6 +3,7 @@ class ThreadDTO {
         this.parent_id = parent_id;
         this.subcat_id = subcat_id;
         this.message = message;
+        this.created_at = new Date().toISOString();
     }
   }
 

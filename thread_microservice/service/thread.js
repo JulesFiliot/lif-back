@@ -17,7 +17,27 @@ const app = admin.initializeApp(firebaseConfig);
 
 exports.getThreads = (req,res,callback) => {
     let response = "";
-    const ref = admin.database().ref('threads/')
+    var ref = admin.database().ref('threads/')
+    if (req.params.subcat_id) {
+        ref = ref.child(req.params.subcat_id);
+    }
+    const filter = req.query.filter;
+    if (filter) {
+        const [field, operator, value] = filter.split('%');
+        if(operator === 'eq'){
+            ref = ref.orderByChild(field).equalTo(value);
+        }
+        else if(operator === 'lt'){
+            ref = ref.orderByChild(field).endAt(value);
+        }
+        else if(operator === 'gt'){
+            ref = ref.orderByChild(field).startAt(value);
+        }
+        else{
+            callback('invalid operator');
+        }
+    }
+
     ref.once('value', (snapshot) => {
         response = snapshot.val();
         callback("",response);
@@ -33,15 +53,6 @@ exports.createThread = (req,res,callback) => {
     } catch {
         callback(true)
     }
-}
-
-exports.getSubcatThreads = (req,res,callback) => {
-    let response = "";
-    const ref = admin.database().ref('threads').orderByChild('subcat_id').equalTo(req.params.subcat_id);
-    ref.once('value', (snapshot) => {
-        response = snapshot.val();
-        callback("",response);
-    });
 }
 
 exports.voteThread = (req,res,callback) => {

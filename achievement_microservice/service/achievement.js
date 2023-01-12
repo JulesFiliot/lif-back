@@ -265,6 +265,7 @@ exports.getSubcatAchievements = (req,res,callback) => {
             const user_id = req.params.user_id ? req.params.user_id.toString() : null;
             for (let [key, value] of entries) {
                 if (user_id) {
+                    //fetch relevant user_achievements and add relevant info to response
                     if (Object.hasOwn(response[key],'owner_ids')) {
                     }
                     if (!(Object.hasOwn(response[key],'owner_ids') && response[key]['owner_ids'].includes(user_id))) {
