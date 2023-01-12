@@ -20,16 +20,6 @@ exports.createThread = (req,res)=>{
     })
 }
 
-exports.getSubcatThreads = (req,res)=>{
-    thread.getSubcatThreads(req,res,(error,data)=>{
-        if (error){
-            res.send("error");
-        }else{
-            res.send(data);
-        }
-    })
-}
-
 exports.voteThread = (req,res)=>{
     thread.voteThread(req,res,(error,data)=>{
         if (error){
