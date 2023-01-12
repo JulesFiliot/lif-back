@@ -5,18 +5,16 @@ let router = express.Router();
 let multer = require('multer');
 let upload = multer();
 
-const jwt = require('jsonwebtoken');
-const secret = 'your-secret';
-
 const authMiddleware = (req, res, next) => {
     const token = req.headers['x-access-token'];
     if (!token) return res.status(401).send({ auth: false, message: 'No token provided.' });
+    payload = {token: token};
     
-    jwt.verify(token, secret, (err, decoded) => {
-        if (err) return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
-        
-        req.userId = decoded.id;
+    axios.post("http://127.0.0.1:3005/verify/", payload).then((data) => {
+        console.log(data);
         next();
+    }).catch((err) => {
+        res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
     });
 }
 

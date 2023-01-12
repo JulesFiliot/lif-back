@@ -80,9 +80,8 @@ exports.verify = (req, res, callback) => {
     const token = req.body.token;
     try {
         const verified = jwt.verify(token, 'your-secret');
-        callback(null, verified);
-        es.send({ verified });
+        return callback(null, verified);
     } catch (error) {
-        callback('Invalid token', null);
+        return callback('Invalid token', null);
     }
 };
