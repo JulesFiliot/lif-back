@@ -258,6 +258,9 @@ exports.getSubcatAchievements = (req,res,callback) => {
         const filter = req.query.filter;
         ref.once('value', (snapshot) => {
             response = snapshot.val();
+            if (!response) {
+                return callback('',{})
+            }
             const entries = Object.entries(response);
             const user_id = req.params.user_id ? req.params.user_id.toString() : null;
             for (let [key, value] of entries) {
