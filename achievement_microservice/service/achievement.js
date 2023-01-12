@@ -288,10 +288,14 @@ exports.getSubcatAchievements = (req,res,callback) => {
                         }
                     }
                     else if(operator === 'lt'){
-                        response.slice(0,value);
+                        if (response[key][field] > value){
+                            delete response[key];
+                        }
                     }
                     else if(operator === 'gt'){
-                        response.slice(value);
+                        if (response[key][field] < value){
+                            delete response[key];
+                        }
                     }
                     else{
                         return callback('invalid operator');

@@ -26,19 +26,75 @@ exports.getCategories = (req,res,callback) => {
 }
 
 exports.getSubcats = (req,res,callback) => {
-    let response = "";
-    if (req.params.cat_id) {
-        const ref = admin.database().ref('subcategories').orderByChild('parent_cat_id').equalTo(req.params.cat_id);
-        ref.once('value', (snapshot) => {
-            response = snapshot.val();
+    try{
+        let response = "";
+        var ref = admin.database().ref('subcategories');
+        const filter = req.query.filter;
+        const page = req.query.page;
+        const per_page = req.query.per_page;
+        var filters = [];
+
+        if (filter) {
+            const filters_raw = filter.split(',');
+            filters_raw.forEach((filter) => {
+                const [field, operator, value] = filter.split('%');
+                filters.push({
+                    field,
+                    operator,
+                    value
+                })
+            })
+        }
+
+        if (filters) {
+            if(filters[0].operator === 'eq'){
+                ref = ref.orderByChild(filters[0].field).equalTo(filters[0].value);
+            }
+            else if(filters[0].operator === 'lt'){
+                ref = ref.orderByChild(filters[0].field).endAt(filters[0].value)
+            }
+            else if(filters[0].operator === 'gt'){
+                ref = ref.orderByChild(filters[0].field).startAt(filters[0].value)
+            }
+            else{
+                callback('invalid operator');
+            }
+        }
+
+        ref.once("value", function(snapshot) {
+            var response = snapshot.val()
+            if (page && page > 0 && per_page && per_page > 0) {
+                response = Object.fromEntries(Object.entries(response).slice((page - 1) * per_page, page * per_page));
+            }
+            const entries = Object.entries(response);
+            for (let [key, value] of entries) {
+                if (filters && filters.length === 2) {
+                    if(filters[1].operator === 'eq'){
+                        if (response[key][filters[1].field].toString() != filters[1].value){
+                            delete response[key];
+                        }
+                    }
+                    else if(filters[1].operator === 'lt'){
+                        if (response[key][filters[1].field] > filters[1].value){
+                            delete response[key];
+                        }
+                    }
+                    else if(filters[1].operator === 'gt'){
+                        if (response[key][filters[1].field] < filters[1].value){
+                            delete response[key];
+                        }
+                    }
+                    else{
+                        return callback('invalid operator');
+                    }
+                }
+            }
             callback("",response);
         });
-    } else { //get all subcats
-        const ref = admin.database().ref('subcategories/')
-        ref.once('value', (snapshot) => {
-            response = snapshot.val();
-            callback("",response);
-        });
+    }
+    catch(err){
+        console.log(err)
+        callback('error');
     }
 }
 
