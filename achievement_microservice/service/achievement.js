@@ -263,50 +263,63 @@ exports.getSubcatAchievements = (req,res,callback) => {
             }
             const entries = Object.entries(response);
             const user_id = req.params.user_id ? req.params.user_id.toString() : null;
-            for (let [key, value] of entries) {
-                if (user_id) {
-                    //fetch relevant user_achievements and add relevant info to response
-                    if (Object.hasOwn(response[key],'owner_ids')) {
-                    }
-                    if (!(Object.hasOwn(response[key],'owner_ids') && response[key]['owner_ids'].includes(user_id))) {
-                        response[key].owned = false;
-                    } else {
-                        response[key].owned = true;
-                    }
-                    if (value.upvote_ids && value.upvote_ids.includes(user_id)) {
-                        response[key].voted = "up";
-                    } else if (value.downvote_ids && value.downvote_ids.includes(user_id)) {
-                        response[key].voted = "down";
-                    } else {
-                        response[key].voted = false;
-                    }
-                }
-                delete response[key].upvote_ids;
-                delete response[key].downvote_ids;
-                delete response[key].owner_ids;
-                if (filter) {
-                    const [field, operator, value] = filter.split('%');
-                    if(operator === 'eq'){
-                        if (response[key][field].toString() != value){
-                            delete response[key];
-                        }
-                    }
-                    else if(operator === 'lt'){
-                        if (response[key][field] > value){
-                            delete response[key];
-                        }
-                    }
-                    else if(operator === 'gt'){
-                        if (response[key][field] < value){
-                            delete response[key];
-                        }
-                    }
-                    else{
-                        return callback('invalid operator');
-                    }
-                }
+            let promise = Promise.resolve();
+            if (user_id) {
+                //fetch this user's user_achievements
+                promise = admin.database().ref('user_achievements').orderByChild('user_id').equalTo(req.params.user_id).once('value', (snapshot) => {
+                    let data = snapshot.val();
+                    return data;
+                });
             }
-            callback("", response);
+            promise.then((user_achievements) => {
+                for (let [key, value] of entries) {
+                    if (user_id) {
+                        if (value.upvote_ids && value.upvote_ids.includes(user_id)) {
+                            response[key].voted = "up";
+                        } else if (value.downvote_ids && value.downvote_ids.includes(user_id)) {
+                            response[key].voted = "down";
+                        } else {
+                            response[key].voted = false;
+                        }
+                        if (user_achievements.val()) {
+                             const owned = Object.entries(user_achievements.val()).filter(u_a => u_a[1].achievement_id == key);
+                             if (owned.length > 0) {
+                                Object.assign(response[key],{
+                                    user_achievement_id: owned[0][0],
+                                    date: owned[0][1].date,
+                                    location: owned[0][1].location,
+                                    image: owned[0][1].image
+                                })
+                             }
+                        }
+                    }
+                    delete response[key].upvote_ids;
+                    delete response[key].downvote_ids;
+                    delete response[key].owner_ids;
+                    if (filter) {
+                        const [field, operator, value] = filter.split('%');
+                        if(operator === 'eq'){
+                            if (response[key][field].toString() != value){
+                                delete response[key];
+                            }
+                        }
+                        else if(operator === 'lt'){
+                            if (response[key][field] > value){
+                                delete response[key];
+                            }
+                        }
+                        else if(operator === 'gt'){
+                            if (response[key][field] < value){
+                                delete response[key];
+                            }
+                        }
+                        else{
+                            return callback('invalid operator');
+                        }
+                    }
+                }
+                callback("", response);
+            });
         });
 
     } catch (e) {
