@@ -35,7 +35,7 @@ exports.getSubcats = (req,res,callback) => {
         const per_page = req.query.per_page;
         var filters = [];
         if (req.params.cat_id) {
-            filters.push({field : 'parent_cat_id', operator: 'eq', value: req.params.cat_id})
+            filters.push({field : 'parent_cat_id', operator: 'eq', value: req.params.cat_id.toString})
         }
 
         if (filter) {
@@ -110,7 +110,7 @@ exports.createCategory = (req,res,callback) => {
 }
 
 exports.createSubcat = (req,res,callback) => {
-    const subcategory = new SubcategoryDTO(req.body.name, req.body.parent_cat_id);
+    const subcategory = new SubcategoryDTO(req.body.name, req.body.parent_cat_id.toString());
     const ref = admin.database().ref('subcategories/')
     ref.push(subcategory);
     callback("",'created');
