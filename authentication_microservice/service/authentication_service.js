@@ -22,10 +22,10 @@ const app = admin.initializeApp(firebaseConfig);
 const db = admin.database();
 
 exports.login = (req, res, callback) => {
-    const username = req.body.username;
+    const email = req.body.email;
     const password = req.body.password;
-    const username_b64 = buffer.Buffer.from(username).toString('base64');
-    db.ref('authentication/').orderByChild('username').equalTo(username_b64).once('value', (data) => {
+    const email_b64 = buffer.Buffer.from(email).toString('base64');
+    db.ref('authentication/').orderByChild('email').equalTo(email_b64).once('value', (data) => {
         if (!data.val()) {
             return callback("Username or password incorrect.", null);
         }
@@ -38,7 +38,7 @@ exports.login = (req, res, callback) => {
         bcrypt.compare(password, hashed_pwd).then((isMatch) => {
             if (isMatch) {
                 const payload = {
-                    user: username
+                    user: email
                 };
                 const secret = 'your-secret';
                 const options = {
@@ -57,19 +57,20 @@ exports.register = (req, res, callback) => {
     const {username, password, email} = req.body;
     if (!username || !password || !email) return callback("Empty entry, please complete each entry on the registration form.", null);
     // check if username already exists
+    const email_b64 = buffer.Buffer.from(email).toString('base64');
     const username_b64 = buffer.Buffer.from(username).toString('base64');
-    db.ref('authentication/' + username_b64).once('value', data => {
+    db.ref('authentication/' + email_b64).once('value', data => {
         if (data.val()) {
             return callback("Username already exists.", null);
         }
         const payload = {
             username: username_b64, 
-            email: email, 
+            email: email_b64, 
         };
         axios.post("http://127.0.0.1:3001/user/", payload).then((id) => {
             bcrypt.hash(password, 10).then((hash)=>{
                 hash_pwd_b64 = buffer.Buffer.from(hash).toString('base64');
-                db.ref('authentication/').update({[id.data]:{password:hash_pwd_b64, username:username_b64}});
+                db.ref('authentication/').update({[id.data]:{password:hash_pwd_b64, email:email_b64}});
                 return callback(null, "New user added: " + payload);
             });
         }).catch((err)=>{
