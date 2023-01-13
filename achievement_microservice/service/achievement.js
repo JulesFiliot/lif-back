@@ -110,23 +110,26 @@ function saveUserAchievement(user_achievement,subcat_id) {
 exports.addUserAchievement = (req,res,callback) => {
     const req_data = req.body;
     const image = req.file;
+    const subcat_id = req_data.subcat_id ? req_data.subcat_id.toString() : null;
+    const user_id = req_data.user_id ? req_data.user_id.toString() : null;
+    const achievement_id = req_data.achievement_id ? req_data.achievement_id.toString() : null;
     //check that this user_achievement does not already exist
-    return admin.database().ref('user_achievements').orderByChild('user_id').equalTo(req.body.user_achievement.user_id).once('value', (snapshot) => {
+    return admin.database().ref('user_achievements').orderByChild('user_id').equalTo(user_id).once('value', (snapshot) => {
         let data = snapshot.val();
-        const owned = Object.entries(data).filter(u_a => (u_a[1].achievement_id == req.body.user_achievement.achievement_id && u_a[1].user_id == req.body.user_achievement.user_id));
+        const owned = Object.entries(data).filter(u_a => (u_a[1].achievement_id == achievement_id && u_a[1].user_id == user_id));
         if (owned.length != 0) {
             return callback(1);
         }
         if (image) {
             return saveImagePromise(image).then((image_url) => {
-                const user_achievement = new UserAchievementDTO(req_data.user_achievement.user_id,req_data.user_achievement.achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location, image_url);
+                const user_achievement = new UserAchievementDTO(user_id,achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location, image_url);
                 return saveUserAchievement(user_achievement,req_data.subcat_id).then(() => {
                     return callback("","added with image");
                 });
             })
         } else {
-            const user_achievement = new UserAchievementDTO(req_data.user_achievement.user_id,req_data.user_achievement.achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location);
-            return saveUserAchievement(user_achievement, req_data.subcat_id).then(() => {
+            const user_achievement = new UserAchievementDTO(user_id,achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location);
+            return saveUserAchievement(user_achievement, subcat_id).then(() => {
                 return callback("","added");
             });
         }
@@ -134,7 +137,10 @@ exports.addUserAchievement = (req,res,callback) => {
 }
 
 exports.removeUserAchievement = (req,res,callback) => {
-    const ref = admin.database().ref('user_achievements/'+req.body.user_achievement.user_achievement_id);
+    const user_achievement_id = req.body.user_achievement.user_achievement_id ? req.body.user_achievement.user_achievement_id.toString() : null;
+    const user_id = req.body.user_achievement.user_id ? req.body.user_achievement.user_id.toString() : null;
+    const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
+    const ref = admin.database().ref('user_achievements/'+user_achievement_id);
     ref.once('value', (snapshot) => {
         const achievement_id = snapshot.val().achievement_id;
         ref.remove()
@@ -146,9 +152,9 @@ exports.removeUserAchievement = (req,res,callback) => {
         .then(() => {
             //request to user microservice to remove from user_achievements list
             let payload = {
-                user_id : req.body.user_achievement.user_id,
-                user_achievement_id : req.body.user_achievement.user_achievement_id,
-                subcat_id : req.body.subcat_id
+                user_id : user_id,
+                user_achievement_id : user_achievement_id,
+                subcat_id : subcat_id
             };
             axios.post(userServiceRoute+'remove-user-achievement/', payload).catch((err)=>{
                 //console.log(err)
@@ -197,8 +203,8 @@ exports.getUserAchievements = (req,res,callback) => {
 exports.voteAchievement = (req,res,callback) => {
     //{user_id, vote: 'up' ou 'down', 'cancel': true ou false}
     try {
-        const achievement_id = req.params.achievement_id;
-        const user_id = req.body.user_id;
+        const achievement_id = req.params.achievement_id ? req.params.achievement_id.toString() : null;
+        const user_id = req.params.user_id ? req.body.user_id.toString() : null;
         const vote = req.body.vote.toLowerCase();
         const cancel = req.body.cancel ? req.body.cancel : false;
         let vote_list_ref = "";
@@ -260,7 +266,7 @@ function validateIfNeeded(achievement_id) {
 exports.getSubcatAchievements = (req,res,callback) => {
     try{
         let response = "";
-        let ref = admin.database().ref('achievements').orderByChild('sub_id').equalTo(req.params.subcat_id);
+        let ref = admin.database().ref('achievements').orderByChild('sub_id').equalTo(req.params.subcat_id.toString());
         const filter = req.query.filter;
         ref.once('value', (snapshot) => {
             response = snapshot.val();
@@ -272,7 +278,7 @@ exports.getSubcatAchievements = (req,res,callback) => {
             let promise = Promise.resolve();
             if (user_id) {
                 //fetch this user's user_achievements
-                promise = admin.database().ref('user_achievements').orderByChild('user_id').equalTo(req.params.user_id).once('value', (snapshot) => {
+                promise = admin.database().ref('user_achievements').orderByChild('user_id').equalTo(user_id).once('value', (snapshot) => {
                     let data = snapshot.val();
                     return data;
                 });
