@@ -27,6 +27,12 @@ exports.getUser = (req, res ,callback) => {
                     if (key === 'username') {
                         value = buffer.Buffer.from(value, 'base64').toString('utf-8');
                     }
+                    if (key === 'email') {
+                        value = buffer.Buffer.from(value, 'base64').toString('utf-8');
+                    }
+                    if (key === 'bio') {
+                        value = buffer.Buffer.from(value, 'base64').toString('utf-8');
+                    }
                     return [key, value];
                 })
             );
