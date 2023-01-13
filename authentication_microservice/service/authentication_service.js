@@ -29,6 +29,8 @@ exports.login = (req, res, callback) => {
         if (!data.val()) {
             return callback("Username or password incorrect.", null);
         }
+        
+        const user_id = Object.keys(data.val())[0];
         const hashed_pwd_b64 = Object.values(data.val())[0].password;
         console.log(hashed_pwd_b64);
         if (!(hashed_pwd_b64)){
@@ -44,7 +46,7 @@ exports.login = (req, res, callback) => {
                 const options = {
                     expiresIn: '1h'
                 };
-                return callback('',jwt.sign(payload, secret, options));
+                return callback('',{token:jwt.sign(payload, secret, options),user_id:user_id});
             } else {
                 return callback("Username or password incorrect.", null);
             };
