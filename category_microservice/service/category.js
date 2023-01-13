@@ -26,6 +26,7 @@ exports.getCategories = (req,res,callback) => {
 }
 
 exports.getSubcats = (req,res,callback) => {
+    //TO REWORK
     try{
         let response = "";
         var ref = admin.database().ref('subcategories');
@@ -33,6 +34,9 @@ exports.getSubcats = (req,res,callback) => {
         const page = req.query.page;
         const per_page = req.query.per_page;
         var filters = [];
+        if (req.params.cat_id) {
+            filters.push({field : parent_cat_id, operator: 'eq', value: eq.params.cat_id})
+        }
 
         if (filter) {
             const filters_raw = filter.split(',');
@@ -46,7 +50,7 @@ exports.getSubcats = (req,res,callback) => {
             })
         }
 
-        if (filters) {
+        if (filters.length > 0) {
             if(filters[0].operator === 'eq'){
                 ref = ref.orderByChild(filters[0].field).equalTo(filters[0].value);
             }
