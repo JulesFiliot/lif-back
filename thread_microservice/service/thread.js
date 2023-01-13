@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const { threadUpdate } = require('../websocket');
 const ThreadDTO = require('../dto/thread-dto');
 const admin = require('firebase-admin');
 const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH); //add path to service_account_key.json
@@ -48,9 +49,13 @@ exports.createThread = (req,res,callback) => {
     try {
         const thread = new ThreadDTO(req.body.thread.parent_id, req.body.thread.subcat_id, req.body.thread.message);
         const ref = admin.database().ref('threads/');
-        ref.push(thread);
+        ref.push(thread).then(() => {
+            if (req.body.thread.parent_id) {
+                threadUpdate(thread);
+            }
+        });
         callback("",'created');
-    } catch {
+    } catch (error) {
         callback(true)
     }
 }
