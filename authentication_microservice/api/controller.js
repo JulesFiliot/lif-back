@@ -5,7 +5,7 @@ exports.login = (req,res) => {
     if (error) {
             res.status(404).json(error);
         } else {
-            res.send(data);
+            res.status(200).json(data);
         }
     });
 }
@@ -13,9 +13,9 @@ exports.login = (req,res) => {
 exports.register = (req,res) => {
     authentication_service.register(req,res,(error,data) => {
     if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
-            res.send(data);
+            res.status(200).json(data);
         }
     });
 }
@@ -23,9 +23,9 @@ exports.register = (req,res) => {
 exports.verify = (req,res) => {
     authentication_service.verify(req,res,(error,data) => {
     if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
-            res.send(data);
+            res.status(200).json(data);
         }
     });
 }

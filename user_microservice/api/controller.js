@@ -3,9 +3,9 @@ const user_service = require('../service/user_service');
 exports.getUser = (req,res) => {
     user_service.getUser(req,res,(error,data) => {
     if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
-            res.send(data);
+            res.status(200).json(data);
         }
     });
 }
@@ -13,9 +13,9 @@ exports.getUser = (req,res) => {
 exports.getAllUsers = (req,res) => {
     user_service.getAllUsers(req,res,(error,data) => {
     if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
-            res.send(data);
+            res.status(200).json(data);
         }
     });
 }
@@ -23,9 +23,9 @@ exports.getAllUsers = (req,res) => {
 exports.addUser = (req,res) => {
     user_service.addUser(req,res,(error,data) => {
         if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
-            res.send(data);
+            res.status(200).json(data);
         }
     });
 }
@@ -33,7 +33,7 @@ exports.addUser = (req,res) => {
 exports.editBio = (req,res) => {
     user_service.editBio(req,res,(error) => {
         if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
             res.sendStatus(200);
         }
@@ -43,7 +43,7 @@ exports.editBio = (req,res) => {
 exports.removeUserAchievement = (req,res) => {
     user_service.removeUserAchievement(req,res,(error) => {
         if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
             res.sendStatus(200);
         }
@@ -53,7 +53,7 @@ exports.removeUserAchievement = (req,res) => {
 exports.addUserAchievement = (req,res) => {
     user_service.addUserAchievement(req,res,(error) => {
         if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
             res.sendStatus(200);
         }
@@ -63,7 +63,7 @@ exports.addUserAchievement = (req,res) => {
 exports.getValidUserCount = (req,res) => {
     user_service.getValidUserCount(req,res,(error, data) => {
         if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
             res.status(200).json(data);
         }
