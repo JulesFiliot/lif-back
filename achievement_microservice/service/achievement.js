@@ -111,8 +111,8 @@ exports.addUserAchievement = (req,res,callback) => {
     const req_data = req.body;
     const image = req.file;
     const subcat_id = req_data.subcat_id ? req_data.subcat_id.toString() : null;
-    const user_id = req_data.user_id ? req_data.user_id.toString() : null;
-    const achievement_id = req_data.achievement_id ? req_data.achievement_id.toString() : null;
+    const user_id = req_data.user_achievement.user_id ? req_data.user_achievement.user_id.toString() : null;
+    const achievement_id = req_data.user_achievement.achievement_id ? req_data.user_achievement.achievement_id.toString() : null;
     //check that this user_achievement does not already exist
     return admin.database().ref('user_achievements').orderByChild('user_id').equalTo(user_id).once('value', (snapshot) => {
         let data = snapshot.val();
