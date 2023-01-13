@@ -116,9 +116,11 @@ exports.addUserAchievement = (req,res,callback) => {
     //check that this user_achievement does not already exist
     return admin.database().ref('user_achievements').orderByChild('user_id').equalTo(user_id).once('value', (snapshot) => {
         let data = snapshot.val();
-        const owned = Object.entries(data).filter(u_a => (u_a[1].achievement_id == achievement_id && u_a[1].user_id == user_id));
-        if (owned.length != 0) {
-            return callback(1);
+        if (data) {
+            const owned = Object.entries(data).filter(u_a => (u_a[1].achievement_id == achievement_id && u_a[1].user_id == user_id));
+            if (owned.length != 0) {
+                return callback(1);
+            }
         }
         if (image) {
             return saveImagePromise(image).then((image_url) => {
