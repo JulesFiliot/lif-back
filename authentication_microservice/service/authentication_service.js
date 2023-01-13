@@ -24,8 +24,11 @@ const db = admin.database();
 exports.login = (req, res, callback) => {
     const username = req.body.username;
     const password = req.body.password;
-    const username_b64 = buffer.Buffer.from(username).toString('base64')
+    const username_b64 = buffer.Buffer.from(username).toString('base64');
     db.ref('authentication/').orderByChild('username').equalTo(username_b64).once('value', (data) => {
+        if (!data.val()) {
+            return callback("Username or password incorrect.", null);
+        }
         const hashed_pwd_b64 = Object.values(data.val())[0].password;
         console.log(hashed_pwd_b64);
         if (!(hashed_pwd_b64)){

@@ -3,7 +3,7 @@ const authentication_service = require('../service/authentication_service');
 exports.login = (req,res) => {
     authentication_service.login(req,res,(error,data) => {
     if (error) {
-            res.send(error);
+            res.status(404).json(error);
         } else {
             res.send(data);
         }
