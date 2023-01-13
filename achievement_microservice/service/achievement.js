@@ -124,13 +124,13 @@ exports.addUserAchievement = (req,res,callback) => {
             return saveImagePromise(image).then((image_url) => {
                 const user_achievement = new UserAchievementDTO(user_id,achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location, image_url);
                 return saveUserAchievement(user_achievement,req_data.subcat_id).then(() => {
-                    return callback("","added with image");
+                    return callback("",user_achievement);
                 });
             })
         } else {
             const user_achievement = new UserAchievementDTO(user_id,achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location);
             return saveUserAchievement(user_achievement, subcat_id).then(() => {
-                return callback("","added");
+                return callback("",user_achievement);
             });
         }
     });
