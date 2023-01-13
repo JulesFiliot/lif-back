@@ -35,7 +35,7 @@ exports.getSubcats = (req,res,callback) => {
         const per_page = req.query.per_page;
         var filters = [];
         if (req.params.cat_id) {
-            filters.push({field : parent_cat_id, operator: 'eq', value: eq.params.cat_id})
+            filters.push({field : 'parent_cat_id', operator: 'eq', value: req.params.cat_id})
         }
 
         if (filter) {
