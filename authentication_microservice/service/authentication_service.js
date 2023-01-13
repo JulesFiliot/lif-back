@@ -66,9 +66,8 @@ exports.register = (req, res, callback) => {
             username: username_b64, 
             email: email, 
         };
-        axios.post("http://127.0.0.1:3001/add-user/", payload).then((id) => {
+        axios.post("http://127.0.0.1:3001/user/", payload).then((id) => {
             bcrypt.hash(password, 10).then((hash)=>{
-                console.log(id.data);
                 hash_pwd_b64 = buffer.Buffer.from(hash).toString('base64');
                 db.ref('authentication/').update({[id.data]:{password:hash_pwd_b64, username:username_b64}});
                 return callback(null, "New user added: " + payload);
