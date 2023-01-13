@@ -20,7 +20,7 @@ exports.getThreads = (req,res,callback) => {
     let response = "";
     var ref = admin.database().ref('threads/')
     if (req.params.subcat_id) {
-        ref = ref.child(req.params.subcat_id);
+        ref = ref.child(req.params.subcat_id.toString());
     }
     const filter = req.query.filter;
     if (filter) {
@@ -47,10 +47,13 @@ exports.getThreads = (req,res,callback) => {
 
 exports.createThread = (req,res,callback) => {
     try {
-        const thread = new ThreadDTO(req.body.thread.parent_id, req.body.thread.subcat_id, req.body.thread.message);
+        const parent_id = req.body.parent_id ? req.body.parent_id.toString() : null;
+        const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
+        const message = req.body.message? req.body.message.toString() : null;
+        const thread = new ThreadDTO(parent_id, subcat_id, message);
         const ref = admin.database().ref('threads/');
         ref.push(thread).then(() => {
-            if (req.body.thread.parent_id) {
+            if (parent_id) {
                 threadUpdate(thread);
             }
         });
@@ -63,8 +66,8 @@ exports.createThread = (req,res,callback) => {
 exports.voteThread = (req,res,callback) => {
     //{user_id, vote: 'up' ou 'down', 'cancel': true ou false}
     try {
-        const thread_id = req.params.thread_id;
-        const user_id = req.body.user_id;
+        const thread_id = req.params.thread_id ? req.params.thread_id.toString() : null;
+        const user_id = req.body.user_id ? req.body.user_id.toString() : null;;
         const vote = req.body.vote.toLowerCase();
         const cancel = req.body.cancel ? req.body.cancel : false;
         let vote_list_ref = "";
