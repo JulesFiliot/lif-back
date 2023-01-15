@@ -103,9 +103,8 @@ exports.getSubcats = (req,res,callback) => {
 }
 
 exports.createCategory = (req,res,callback) => {
-    const category = new CategoryDTO(req.body.name);
     const ref = admin.database().ref('categories/');
-    ref.push(category);
+    ref.push(req.body.name);
     callback("",'created');
 }
 
