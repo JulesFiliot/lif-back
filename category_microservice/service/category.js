@@ -1,6 +1,5 @@
 require('dotenv').config();
 
-const CategoryDTO = require('../dto/category-dto');
 const SubcategoryDTO = require('../dto/subcategory-dto');
 const admin = require('firebase-admin');
 const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH); //add path to service_account_key.json
