@@ -46,9 +46,14 @@ exports.login = (req, res, callback) => {
                 const options = {
                     expiresIn: '1h'
                 };
-                axios.get("http://127.0.0.1:3001/user/" + user_id, payload).then((user) => {
+                const token = jwt.sign(payload, secret, options);
+                axios.get("http://127.0.0.1:3001/user/" + user_id, {
+                    headers: {
+                        'x-access-token': `${token}`
+                    }
+                }).then((user) => {
                     user.data['id'] = user_id;
-                    return callback('',{token:jwt.sign(payload, secret, options),user:user.data});
+                    return callback('',{token:token, user:user.data});
                 })
             } else {
                 return callback("Username or password incorrect.", null);
