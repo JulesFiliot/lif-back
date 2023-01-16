@@ -64,6 +64,17 @@ exports.getThreads = (req,res,callback) => {
             }
             const entries = Object.entries(response);
             for (let [key, value] of entries) {
+                let score = 0;
+                if (value.upvote_ids){
+                    score += value.upvote_ids.length;
+                }
+                if (value.downvote_ids){
+                    score -= value.downvote_ids.length;
+                }
+                response[key].score = score;
+                delete response[key].upvote_ids;
+                delete response[key].downvote_ids;
+
                 if (filters && filters.length === 2) {
                     if(filters[1].operator === 'eq'){
                         if (response[key][filters[1].field].toString() != filters[1].value){
