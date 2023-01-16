@@ -254,7 +254,7 @@ function validateIfNeeded(achievement_id) {
     const ref = admin.database().ref('achievements/'+achievement_id);
     return ref.once('value', (snapshot) => {
         const achievement = snapshot.val();
-        axios.get(userServiceRoute+'valid-user-count/'+achievement.sub_id).then((response) => {
+        axios.get(userServiceRoute+'valid-user-count/'+achievement.subcat_id).then((response) => {
             const valid_users_count = response.data.valid_users_count;
             const treshold = 3; //0.1*valid_users_count
             if (achievement.upvote_ids.length >= treshold) {
@@ -268,7 +268,7 @@ function validateIfNeeded(achievement_id) {
 exports.getSubcatAchievements = (req,res,callback) => {
     try{
         let response = "";
-        let ref = admin.database().ref('achievements').orderByChild('sub_id').equalTo(req.params.subcat_id.toString());
+        let ref = admin.database().ref('achievements').orderByChild('subcat_id').equalTo(req.params.subcat_id.toString());
         const filter = req.query.filter;
         ref.once('value', (snapshot) => {
             response = snapshot.val();
