@@ -27,6 +27,12 @@ exports.getUser = (req, res ,callback) => {
                     if (key === 'username') {
                         value = buffer.Buffer.from(value, 'base64').toString('utf-8');
                     }
+                    if (key === 'email') {
+                        value = buffer.Buffer.from(value, 'base64').toString('utf-8');
+                    }
+                    if (key === 'bio') {
+                        value = buffer.Buffer.from(value, 'base64').toString('utf-8');
+                    }
                     return [key, value];
                 })
             );
@@ -54,12 +60,18 @@ exports.getAllUsers = (req, res, callback) => {
 };
 
 exports.addUser = (req, res, callback) => {
-    const registerUserDto = new RegisterUserDTO (req.body.username, req.body.email);
-    if (registerUserDto) {
-        db.ref('users/').push(registerUserDto).then((user) => {
-            console.log(user.key);
-            return callback(null, user.key);
-        });
+    const username = req.body.username ? req.body.username.toString() : null;
+    const email = req.body.email ? req.body.email.toString() : null;
+    if (username && email) {
+        const registerUserDto = new RegisterUserDTO (username, email);
+        if (registerUserDto) {
+            db.ref('users/').push(registerUserDto).then((user) => {
+                console.log(user.key);
+                return callback(null, user.key);
+            });
+        } else {
+            return callback("Error while creating user.", null);
+        }
     } else {
         return callback("Error while creating user.", null);
     }
@@ -67,15 +79,17 @@ exports.addUser = (req, res, callback) => {
 
 
 exports.editBio = (req, res, callback) => {
-    db.ref('users/' + req.body.user_id).update({'bio':req.body.bio}).then(()=> {
+    db.ref('users/' + req.body.user_id?req.body.toString():null).update({'bio':req.body.bio?req.body.bio.toString():null}).then(()=> {
         return callback(null,"OK");
+    }).catch((err)=>{
+        return callback(1,null);
     });
 };
 
 exports.removeUserAchievement = (req, res, callback) => {
-    const userId = req.body.user_id;
-    const userAchievementId = req.body.user_achievement_id;
-    const subcat_id = req.body.subcat_id;
+    const userId = req.body.user_id ? req.body.user_id.toString() : null;
+    const userAchievementId = req.body.user_achievement_id ? req.body.user_achievement_id.toString() : null;
+    const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
     db.ref('users/' + userId).once('value', (data) => {
         if(data.val() && data.val().user_achievements) {
             let list_achievements = data.val().user_achievements;
@@ -98,9 +112,9 @@ exports.removeUserAchievement = (req, res, callback) => {
 };
 
 exports.addUserAchievement = (req, res, callback) => {
-    const userId = req.body.user_id;
-    const userAchievementId = req.body.user_achievement_id;
-    const subcat_id = req.body.subcat_id;
+    const userId = req.body.user_id ? req.body.user_id.toString() : null;
+    const userAchievementId = req.body.user_achievement_id ? req.body.user_achievement_id.toString() : null;
+    const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
     let list_achievements = [];
     let this_subcat_count = 1;
     db.ref('users/'+userId).once('value', (data) => {
@@ -126,8 +140,12 @@ exports.addUserAchievement = (req, res, callback) => {
 };
 
 exports.getValidUserCount = (req, res, callback) => {
-    db.ref('users/').orderByChild('subcat_count/'+req.params.subcat_id).startAt(5).once('value', (data) => {
-        valid_users = data.val();
-        return callback("", {count:valid_users ? Object.keys(valid_users).length : 0});
-    });
+    try {
+        db.ref('users/').orderByChild('subcat_count/'+req.params.subcat_id).startAt(5).once('value', (data) => {
+            valid_users = data.val();
+            return callback("", {count:valid_users ? Object.keys(valid_users).length : 0});
+        });
+    } catch (err) {
+        return callback(1);
+    }
 };

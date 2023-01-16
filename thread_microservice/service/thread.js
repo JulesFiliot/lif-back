@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const { threadUpdate } = require('../websocket');
 const ThreadDTO = require('../dto/thread-dto');
 const admin = require('firebase-admin');
 const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH); //add path to service_account_key.json
@@ -16,41 +17,97 @@ const firebaseConfig = {
 const app = admin.initializeApp(firebaseConfig);
 
 exports.getThreads = (req,res,callback) => {
-    let response = "";
-    var ref = admin.database().ref('threads/')
-    if (req.params.subcat_id) {
-        ref = ref.child(req.params.subcat_id);
-    }
-    const filter = req.query.filter;
-    if (filter) {
-        const [field, operator, value] = filter.split('%');
-        if(operator === 'eq'){
-            ref = ref.orderByChild(field).equalTo(value);
+    //TO REWORK
+    try{
+        let response = "";
+        var ref = admin.database().ref('threads');
+        const filter = req.query.filter;
+        const page = req.query.page;
+        const per_page = req.query.per_page;
+        var filters = [];
+        if (req.params.subcat_id) {
+            filters.push({field : 'subcat_id', operator: 'eq', value: req.params.subcat_id.toString()})
         }
-        else if(operator === 'lt'){
-            ref = ref.orderByChild(field).endAt(value);
-        }
-        else if(operator === 'gt'){
-            ref = ref.orderByChild(field).startAt(value);
-        }
-        else{
-            callback('invalid operator');
-        }
-    }
 
-    ref.once('value', (snapshot) => {
-        response = snapshot.val();
-        callback("",response);
-      });
+        if (filter) {
+            const filters_raw = filter.split(',');
+            filters_raw.forEach((filter) => {
+                const [field, operator, value] = filter.split('%');
+                filters.push({
+                    field,
+                    operator,
+                    value
+                })
+            })
+        }
+
+        if (filters.length > 0) {
+            if(filters[0].operator === 'eq'){
+                ref = ref.orderByChild(filters[0].field).equalTo(filters[0].value);
+            }
+            else if(filters[0].operator === 'lt'){
+                ref = ref.orderByChild(filters[0].field).endAt(filters[0].value)
+            }
+            else if(filters[0].operator === 'gt'){
+                ref = ref.orderByChild(filters[0].field).startAt(filters[0].value)
+            }
+            else{
+                callback('invalid operator');
+            }
+        }
+
+        return ref.once("value", function(snapshot) {
+            var response = snapshot.val()
+            if (!response) return callback("",{});
+            if (page && page > 0 && per_page && per_page > 0) {
+                response = Object.fromEntries(Object.entries(response).slice((page - 1) * per_page, page * per_page));
+            }
+            const entries = Object.entries(response);
+            for (let [key, value] of entries) {
+                if (filters && filters.length === 2) {
+                    if(filters[1].operator === 'eq'){
+                        if (response[key][filters[1].field].toString() != filters[1].value){
+                            delete response[key];
+                        }
+                    }
+                    else if(filters[1].operator === 'lt'){
+                        if (response[key][filters[1].field] > filters[1].value){
+                            delete response[key];
+                        }
+                    }
+                    else if(filters[1].operator === 'gt'){
+                        if (response[key][filters[1].field] < filters[1].value){
+                            delete response[key];
+                        }
+                    }
+                    else{
+                        return callback('invalid operator');
+                    }
+                }
+            }
+            return callback("",response);
+        });
+    }
+    catch(err){
+        console.log(err)
+        callback('error');
+    }
 }
 
 exports.createThread = (req,res,callback) => {
     try {
-        const thread = new ThreadDTO(req.body.thread.parent_id, req.body.thread.subcat_id, req.body.thread.message);
+        const parent_id = req.body.parent_id ? req.body.parent_id.toString() : null;
+        const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
+        const message = req.body.message? req.body.message.toString() : null;
+        const thread = new ThreadDTO(parent_id, subcat_id, message);
         const ref = admin.database().ref('threads/');
-        ref.push(thread);
+        ref.push(thread).then(() => {
+            if (parent_id) {
+                threadUpdate(thread);
+            }
+        });
         callback("",'created');
-    } catch {
+    } catch (error) {
         callback(true)
     }
 }
@@ -58,8 +115,8 @@ exports.createThread = (req,res,callback) => {
 exports.voteThread = (req,res,callback) => {
     //{user_id, vote: 'up' ou 'down', 'cancel': true ou false}
     try {
-        const thread_id = req.params.thread_id;
-        const user_id = req.body.user_id;
+        const thread_id = req.params.thread_id ? req.params.thread_id.toString() : null;
+        const user_id = req.body.user_id ? req.body.user_id.toString() : null;;
         const vote = req.body.vote.toLowerCase();
         const cancel = req.body.cancel ? req.body.cancel : false;
         let vote_list_ref = "";

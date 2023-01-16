@@ -1,6 +1,5 @@
 require('dotenv').config();
 
-const CategoryDTO = require('../dto/category-dto');
 const SubcategoryDTO = require('../dto/subcategory-dto');
 const admin = require('firebase-admin');
 const serviceAccount = require(process.env.SERVICE_ACCOUNT_KEY_PATH); //add path to service_account_key.json
@@ -26,6 +25,7 @@ exports.getCategories = (req,res,callback) => {
 }
 
 exports.getSubcats = (req,res,callback) => {
+    //TO REWORK
     try{
         let response = "";
         var ref = admin.database().ref('subcategories');
@@ -33,6 +33,9 @@ exports.getSubcats = (req,res,callback) => {
         const page = req.query.page;
         const per_page = req.query.per_page;
         var filters = [];
+        if (req.params.cat_id) {
+            filters.push({field : 'parent_cat_id', operator: 'eq', value: req.params.cat_id.toString()})
+        }
 
         if (filter) {
             const filters_raw = filter.split(',');
@@ -46,7 +49,7 @@ exports.getSubcats = (req,res,callback) => {
             })
         }
 
-        if (filters) {
+        if (filters.length > 0) {
             if(filters[0].operator === 'eq'){
                 ref = ref.orderByChild(filters[0].field).equalTo(filters[0].value);
             }
@@ -99,14 +102,13 @@ exports.getSubcats = (req,res,callback) => {
 }
 
 exports.createCategory = (req,res,callback) => {
-    const category = new CategoryDTO(req.body.name);
     const ref = admin.database().ref('categories/');
-    ref.push(category);
+    ref.push(req.body.name);
     callback("",'created');
 }
 
 exports.createSubcat = (req,res,callback) => {
-    const subcategory = new SubcategoryDTO(req.body.name, req.body.parent_cat_id);
+    const subcategory = new SubcategoryDTO(req.body.name, req.body.parent_cat_id.toString());
     const ref = admin.database().ref('subcategories/')
     ref.push(subcategory);
     callback("",'created');
