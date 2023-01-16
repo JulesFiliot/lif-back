@@ -64,11 +64,12 @@ exports.getSubcats = (req,res,callback) => {
             }
         }
 
-        ref.once("value", function(snapshot) {
+        return ref.once("value", function(snapshot) {
             var response = snapshot.val()
             if (page && page > 0 && per_page && per_page > 0) {
                 response = Object.fromEntries(Object.entries(response).slice((page - 1) * per_page, page * per_page));
             }
+            if (!response) {return callback('',{})}
             const entries = Object.entries(response);
             for (let [key, value] of entries) {
                 if (filters && filters.length === 2) {
