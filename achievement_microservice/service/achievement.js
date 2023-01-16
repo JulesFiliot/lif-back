@@ -99,7 +99,10 @@ function saveUserAchievement(user_achievement,subcat_id) {
                 user_achievement_id : user_achievement_ref.key,
                 subcat_id : subcat_id
             };
-            return axios.post(userServiceRoute+'add-user-achievement/', payload)
+            return axios.post(userServiceRoute+'user-achievement/', payload).then(()=>{
+                user_achievement.user_achievement_id = user_achievement_ref.key;
+                return user_achievement
+            })
             .catch((err)=>{
                 //console.log(err)
             });
@@ -125,14 +128,14 @@ exports.addUserAchievement = (req,res,callback) => {
         if (image) {
             return saveImagePromise(image).then((image_url) => {
                 const user_achievement = new UserAchievementDTO(user_id,achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location, image_url);
-                return saveUserAchievement(user_achievement,req_data.subcat_id).then(() => {
-                    return callback("",user_achievement);
+                return saveUserAchievement(user_achievement,req_data.subcat_id).then((data) => {
+                    return callback("",data);
                 });
             })
         } else {
             const user_achievement = new UserAchievementDTO(user_id,achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location);
-            return saveUserAchievement(user_achievement, subcat_id).then(() => {
-                return callback("",user_achievement);
+            return saveUserAchievement(user_achievement, subcat_id).then((data) => {
+                return callback("",data);
             });
         }
     });
