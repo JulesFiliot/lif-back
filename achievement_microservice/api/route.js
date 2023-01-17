@@ -13,7 +13,6 @@ const authMiddleware = (req, res, next) => {
     if (!token) return res.status(401).send({ auth: false, message: 'No token provided.' });
     payload = {token: token};
     axios.post("http://127.0.0.1:3005/verify/", payload).then((data) => {
-        console.log(data);
         next();
     }).catch((err) => {
         res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
