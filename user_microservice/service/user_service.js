@@ -98,7 +98,7 @@ exports.removeUserAchievement = (req, res, callback) => {
                 var index = list_achievements.indexOf(userAchievementId);
                 if (index !== -1) {
                     list_achievements.splice(index, 1);
-                } else return callback("The id given in parameter is either wrong or doesn't exist.", null);
+                } else throw ("The id given in parameter is either wrong or doesn't exist.");
             } else if(list_achievements[0] == userAchievementId){
                 list_achievements = [];
             }
