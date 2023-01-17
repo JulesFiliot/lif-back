@@ -66,7 +66,6 @@ exports.addUser = (req, res, callback) => {
         const registerUserDto = new RegisterUserDTO (username, email);
         if (registerUserDto) {
             db.ref('users/').push(registerUserDto).then((user) => {
-                console.log(user.key);
                 return callback(null, user.key);
             });
         } else {
@@ -90,9 +89,11 @@ exports.removeUserAchievement = (req, res, callback) => {
     const userId = req.body.user_id ? req.body.user_id.toString() : null;
     const userAchievementId = req.body.user_achievement_id ? req.body.user_achievement_id.toString() : null;
     const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
-    db.ref('users/' + userId).once('value', (data) => {
-        if(data.val() && data.val().user_achievements) {
-            let list_achievements = data.val().user_achievements;
+    let list_achievements = [];
+    let return_data = {};
+    db.ref('users/' + userId).transaction((data) => {
+        if(data && data.user_achievements) {
+            list_achievements = data.user_achievements;
             if(list_achievements.length >= 1) {
                 var index = list_achievements.indexOf(userAchievementId);
                 if (index !== -1) {
@@ -101,13 +102,19 @@ exports.removeUserAchievement = (req, res, callback) => {
             } else if(list_achievements[0] == userAchievementId){
                 list_achievements = [];
             }
-            let this_subcat_count = data.val().subcat_count[subcat_id] - 1;
-            db.ref('users/'+userId).update({'user_achievements': list_achievements, "subcat_count": {[subcat_id]: this_subcat_count}});
-            const userDto = new UserDTO(data.val().username, data.val().email, list_achievements, data.val().bio);
-            return callback("", userDto);
+            let this_subcat_count = data.subcat_count[subcat_id];
+            data.user_achievements = list_achievements;
+            data.subcat_count[subcat_id]=this_subcat_count - 1;
+            return_data = data;
+            return data
         } else {
-            return callback("The id given in parameter is either wrong or doesn't exist.", null);
+            return null;
         }
+    }).then(()=>{
+        const userDto = new UserDTO(return_data.username, return_data.email, list_achievements, return_data.bio);
+        return callback("", userDto);
+    }).catch((error)=>{
+        return callback("The id given in parameter is either wrong or doesn't exist.", null);
     })
 };
 
@@ -117,25 +124,33 @@ exports.addUserAchievement = (req, res, callback) => {
     const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
     let list_achievements = [];
     let this_subcat_count = 1;
-    db.ref('users/'+userId).once('value', (data) => {
-        if(data.val()) {
-            if(data.val().user_achievements) {
-                list_achievements = data.val().user_achievements;
+    let return_data = {};
+    return db.ref('users/'+userId).transaction((data) => {
+        if(data) {
+            if(data.user_achievements) {
+                list_achievements = data.user_achievements;
             }
             if (list_achievements.indexOf(userAchievementId) == -1) {
                 list_achievements.push(userAchievementId)
             } else {
-                return callback("The user already have this achievement.", null);
+                throw ("The user already have this achievement.");
             }
-            if(data.val().subcat_count && data.val().subcat_count[subcat_id]) {
-                this_subcat_count += data.val().subcat_count[subcat_id];
+            if(data.subcat_count && data.subcat_count[subcat_id]) {
+                this_subcat_count += data.subcat_count[subcat_id];
             }
-            db.ref('users/'+userId).update({'user_achievements': list_achievements, "subcat_count": {[subcat_id]: this_subcat_count}});
-            const userDto = new UserDTO(data.val().username, data.val().email, list_achievements, data.val().bio);
-            return callback("", userDto);
+
+            data.user_achievements = list_achievements;
+            data.subcat_count[subcat_id]=this_subcat_count;
+            return_data = data;
+            return data
         } else {
-            return callback("The id given in parameter is either wrong or doesn't exist.", null);
+            return null;
         }
+    }).then(()=>{
+        const userDto = new UserDTO(return_data.username, return_data.email, list_achievements, return_data.bio);
+        return callback("", userDto);
+    }).catch((error)=>{
+        return callback("The id given in parameter is either wrong or doesn't exist.", null);
     })
 };
 

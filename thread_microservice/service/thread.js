@@ -123,14 +123,14 @@ exports.createThread = (req,res,callback) => {
         const username = req.body.username ? req.body.username.toString() : null;
         const thread = new ThreadDTO(parent_id, subcat_id, title, message, username);
         const ref = admin.database().ref('threads/');
-        ref.push(thread).then(() => {
+        return ref.push(thread).then((added_ref) => {
             if (parent_id) {
                 threadUpdate(thread);
             }
+            return callback("",added_ref.key);
         });
-        callback("",'created');
     } catch (error) {
-        callback(true)
+        return callback(true)
     }
 }
 

@@ -115,7 +115,7 @@ exports.addUserAchievement = (req,res,callback) => {
     const token = req.headers['x-access-token'];
     const req_data = req.body;
     const image = req.file;
-    const subcat_id = req_data.subcat_id ? req_data.subcat_id.toString() : null;
+    const subcat_id = req_data.user_achievement.subcat_id ? req_data.user_achievement.subcat_id.toString() : null;
     const user_id = req_data.user_achievement.user_id ? req_data.user_achievement.user_id.toString() : null;
     const achievement_id = req_data.user_achievement.achievement_id ? req_data.user_achievement.achievement_id.toString() : null;
     //check that this user_achievement does not already exist
@@ -130,7 +130,7 @@ exports.addUserAchievement = (req,res,callback) => {
         if (image) {
             return saveImagePromise(image).then((image_url) => {
                 const user_achievement = new UserAchievementDTO(user_id,achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location, image_url);
-                return saveUserAchievement(user_achievement,req_data.subcat_id, token).then((data) => {
+                return saveUserAchievement(user_achievement,subcat_id, token).then((data) => {
                     return callback("",data);
                 });
             })
@@ -148,7 +148,7 @@ exports.removeUserAchievement = (req,res,callback) => {
     const token = req.headers['x-access-token'];
     const user_achievement_id = req.body.user_achievement.user_achievement_id ? req.body.user_achievement.user_achievement_id.toString() : null;
     const user_id = req.body.user_achievement.user_id ? req.body.user_achievement.user_id.toString() : null;
-    const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
+    const subcat_id = req.body.user_achievement.subcat_id ? req.body.user_achievement.subcat_id.toString() : null;
     const ref = admin.database().ref('user_achievements/'+user_achievement_id);
     ref.once('value', (snapshot) => {
         const achievement_id = snapshot.val().achievement_id;
@@ -178,39 +178,82 @@ exports.removeUserAchievement = (req,res,callback) => {
 }
 
 exports.getUserAchievements = (req,res,callback) => {
+    //Warning: we can access every user's user achievements with this
     const ref = admin.database().ref('user_achievements/');
-    const filter = req.query.filter;
-        if (filter) {
-            const [field, operator, value] = filter.split('%');
-            if(operator === 'eq'){
-                ref.orderByChild(field).equalTo(value).on("value", function(snapshot) {
-                    const data = snapshot.val()
-                    callback("",data);
+    const user_id = req.params.user_id ? req.params.user_id.toString() : null;
+    try{
+        let response = "";
+        let ref = admin.database().ref('achievements').orderByChild('subcat_id').equalTo(req.params.subcat_id.toString());
+        const filter = req.query.filter;
+        ref.once('value', (snapshot) => {
+            response = snapshot.val();
+            if (!response) {
+                return callback('',{})
+            }
+            const entries = Object.entries(response);
+            const user_id = req.params.user_id ? req.params.user_id.toString() : null;
+            let promise = Promise.resolve();
+            if (user_id) {
+                //fetch this user's user_achievements
+                promise = admin.database().ref('user_achievements').orderByChild('user_id').equalTo(user_id).once('value', (snapshot) => {
+                    let data = snapshot.val();
+                    return data;
                 });
             }
-            else if(operator === 'lt'){
-                ref.orderByChild(field).endAt(value).on("value", function(snapshot) {
-                    const data = snapshot.val()
-                    callback("",data);
-                });
-            }
-            else if(operator === 'gt'){
-                ref.orderByChild(field).startAt(value).on("value", function(snapshot) {
-                    const data = snapshot.val()
-                    callback("",data);
-                });
-            }
-            else{
-                callback('invalid operator');
-            }
-        } else {
-            //TODO:
-            // /!\ returning every users achievements should not be accessible to users (user should only see his own achievements)
-            ref.once('value', (snapshot) => {
-                const data = snapshot.val();
-                callback("",data);
+            promise.then((user_achievements) => {
+                for (let [key, value] of entries) {
+                    if (user_id) {
+                        if (value.upvote_ids && value.upvote_ids.includes(user_id)) {
+                            response[key].voted = "up";
+                        } else if (value.downvote_ids && value.downvote_ids.includes(user_id)) {
+                            response[key].voted = "down";
+                        } else {
+                            response[key].voted = false;
+                        }
+                        if (user_achievements.val()) {
+                             const owned = Object.entries(user_achievements.val()).filter(u_a => u_a[1].achievement_id == key);
+                             if (owned.length > 0) {
+                                Object.assign(response[key],{
+                                    user_achievement_id: owned[0][0],
+                                    date: owned[0][1].date,
+                                    location: owned[0][1].location,
+                                    image: owned[0][1].image
+                                })
+                             }
+                        }
+                    }
+                    delete response[key].upvote_ids;
+                    delete response[key].downvote_ids;
+                    delete response[key].owner_ids;
+                    if (filter) {
+                        const [field, operator, value] = filter.split('%');
+                        if(operator === 'eq'){
+                            if (response[key][field].toString() != value){
+                                delete response[key];
+                            }
+                        }
+                        else if(operator === 'lt'){
+                            if (response[key][field] > value){
+                                delete response[key];
+                            }
+                        }
+                        else if(operator === 'gt'){
+                            if (response[key][field] < value){
+                                delete response[key];
+                            }
+                        }
+                        else{
+                            return callback('invalid operator');
+                        }
+                    }
+                }
+                callback("", response);
             });
-        }
+        });
+
+    } catch (e) {
+        callback(true);
+    }
 }
 
 exports.voteAchievement = (req,res,callback) => {

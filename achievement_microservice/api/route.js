@@ -23,7 +23,7 @@ router.post("/achievement", authMiddleware, Controller.createAchievement);
 router.get("/achievements", authMiddleware, Controller.getAchievements);
 router.post("/user-achievement", authMiddleware, upload.single('image'), Controller.addUserAchievement);
 router.post("/remove-user-achievement", authMiddleware, Controller.removeUserAchievement);
-router.get("/user-achievements", authMiddleware, Controller.getUserAchievements);
+router.get("/user-achievements/:user_id?", authMiddleware, Controller.getUserAchievements);
 router.post("/vote/:achievement_id", authMiddleware, Controller.voteAchievement);
 router.get("/subcat-achievements/:subcat_id/:user_id?", authMiddleware, Controller.getSubcatAchievements);
 
