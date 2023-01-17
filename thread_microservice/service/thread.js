@@ -118,9 +118,10 @@ exports.createThread = (req,res,callback) => {
     try {
         const parent_id = req.body.parent_id ? req.body.parent_id.toString() : null;
         const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
+        const title = req.body.title ? req.body.title.toString() : null;
         const message = req.body.message ? req.body.message.toString() : null;
         const username = req.body.username ? req.body.username.toString() : null;
-        const thread = new ThreadDTO(parent_id, subcat_id, message, username);
+        const thread = new ThreadDTO(parent_id, subcat_id, title, message, username);
         const ref = admin.database().ref('threads/');
         ref.push(thread).then(() => {
             if (parent_id) {
