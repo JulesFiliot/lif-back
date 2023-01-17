@@ -67,6 +67,7 @@ exports.getThreads = (req,res,callback) => {
             const entries = Object.entries(response);
             for (let [key, value] of entries) {
                 let score = 0;
+                response[key].voted = 'no';
                 if (value.upvote_ids){
                     score += value.upvote_ids.length;
                     if (value.upvote_ids.includes(user_id)) {

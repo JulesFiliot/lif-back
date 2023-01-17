@@ -17,7 +17,7 @@ const authMiddleware = (req, res, next) => {
     });
 }
 
-router.get("/threads/:subcat_id?", authMiddleware,Controller.getThreads);
+router.get("/threads/:subcat_id?/:user_id?", authMiddleware,Controller.getThreads);
 router.post("/thread", authMiddleware,Controller.createThread);
 router.post("/vote/:thread_id", authMiddleware,Controller.voteThread);
 
