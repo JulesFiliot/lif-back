@@ -32,7 +32,6 @@ exports.login = (req, res, callback) => {
         
         const user_id = Object.keys(data.val())[0];
         const hashed_pwd_b64 = Object.values(data.val())[0].password;
-        console.log(hashed_pwd_b64);
         if (!(hashed_pwd_b64)){
             return callback("Username or password incorrect.", null);
         }
