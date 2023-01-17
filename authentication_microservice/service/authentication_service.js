@@ -43,7 +43,7 @@ exports.login = (req, res, callback) => {
                 };
                 const secret = 'your-secret';
                 const options = {
-                    expiresIn: '1h'
+                    expiresIn: '2h'
                 };
                 const token = jwt.sign(payload, secret, options);
                 axios.get("http://127.0.0.1:3001/user/" + user_id, {
