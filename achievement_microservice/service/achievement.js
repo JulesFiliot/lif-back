@@ -86,7 +86,7 @@ function saveImagePromise(image) {
     });
 }
 
-function saveUserAchievement(user_achievement,subcat_id) {
+function saveUserAchievement(user_achievement,subcat_id, token) {
     const ref = admin.database().ref('user_achievements/')
     return ref.push(user_achievement).then((user_achievement_ref) => {
         return admin.database().ref('achievements/'+user_achievement.achievement_id+'/popularity').transaction((currentValue) => {
@@ -99,18 +99,20 @@ function saveUserAchievement(user_achievement,subcat_id) {
                 user_achievement_id : user_achievement_ref.key,
                 subcat_id : subcat_id
             };
-            return axios.post(userServiceRoute+'user-achievement/', payload).then(()=>{
+            return axios.post(userServiceRoute+'user-achievement/', payload, {
+                headers: {
+                    'x-access-token': `${token}`
+                }
+            }).then(()=>{
                 user_achievement.user_achievement_id = user_achievement_ref.key;
                 return user_achievement
-            })
-            .catch((err)=>{
-                //console.log(err)
             });
         });
     });
 }
 
 exports.addUserAchievement = (req,res,callback) => {
+    const token = req.headers['x-access-token'];
     const req_data = req.body;
     const image = req.file;
     const subcat_id = req_data.subcat_id ? req_data.subcat_id.toString() : null;
@@ -128,20 +130,22 @@ exports.addUserAchievement = (req,res,callback) => {
         if (image) {
             return saveImagePromise(image).then((image_url) => {
                 const user_achievement = new UserAchievementDTO(user_id,achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location, image_url);
-                return saveUserAchievement(user_achievement,req_data.subcat_id).then((data) => {
+                return saveUserAchievement(user_achievement,req_data.subcat_id, token).then((data) => {
                     return callback("",data);
                 });
             })
         } else {
             const user_achievement = new UserAchievementDTO(user_id,achievement_id ,req_data.user_achievement.date ,req_data.user_achievement.location);
-            return saveUserAchievement(user_achievement, subcat_id).then((data) => {
+            return saveUserAchievement(user_achievement, subcat_id, token).then((data) => {
                 return callback("",data);
+
             });
         }
     });
 }
 
 exports.removeUserAchievement = (req,res,callback) => {
+    const token = req.headers['x-access-token'];
     const user_achievement_id = req.body.user_achievement.user_achievement_id ? req.body.user_achievement.user_achievement_id.toString() : null;
     const user_id = req.body.user_achievement.user_id ? req.body.user_achievement.user_id.toString() : null;
     const subcat_id = req.body.subcat_id ? req.body.subcat_id.toString() : null;
@@ -161,7 +165,11 @@ exports.removeUserAchievement = (req,res,callback) => {
                 user_achievement_id : user_achievement_id,
                 subcat_id : subcat_id
             };
-            axios.post(userServiceRoute+'remove-user-achievement/', payload).catch((err)=>{
+            axios.post(userServiceRoute+'remove-user-achievement/', payload, {
+                headers: {
+                    'x-access-token': `${token}`
+                }
+            }).catch((err)=>{
                 //console.log(err)
             });
             callback("",'removed');
@@ -208,6 +216,7 @@ exports.getUserAchievements = (req,res,callback) => {
 exports.voteAchievement = (req,res,callback) => {
     //{user_id, vote: 'up' ou 'down', 'cancel': true ou false}
     try {
+        const token = req.headers['x-access-token'];
         const achievement_id = req.params.achievement_id ? req.params.achievement_id.toString() : null;
         const user_id = req.params.user_id ? req.body.user_id.toString() : null;
         const vote = req.body.vote.toLowerCase();
@@ -226,7 +235,7 @@ exports.voteAchievement = (req,res,callback) => {
                 }
                 return null;
               }).then(()=>{
-                validateIfNeeded(achievement_id).then(()=>{
+                validateIfNeeded(achievement_id, token).then(()=>{
                     callback("",'voted')
                 });
               });
@@ -242,7 +251,7 @@ exports.voteAchievement = (req,res,callback) => {
                 }
                 return [user_id];
             }).then(()=>{
-                validateIfNeeded(achievement_id).then(()=>{
+                validateIfNeeded(achievement_id, token).then(()=>{
                     callback("",'voted')
                 });
             });
@@ -252,12 +261,16 @@ exports.voteAchievement = (req,res,callback) => {
     }
 }
 
-function validateIfNeeded(achievement_id) {
+function validateIfNeeded(achievement_id, token) {
     //check if achievement popularity is higher than 10% of valid users (users with a subcat_count >= 5 )
     const ref = admin.database().ref('achievements/'+achievement_id);
     return ref.once('value', (snapshot) => {
         const achievement = snapshot.val();
-        axios.get(userServiceRoute+'valid-user-count/'+achievement.subcat_id).then((response) => {
+        axios.get(userServiceRoute+'valid-user-count/'+achievement.subcat_id, {
+            headers: {
+                'x-access-token': `${token}`
+            }
+        }).then((response) => {
             const valid_users_count = response.data.valid_users_count;
             const treshold = 3; //0.1*valid_users_count
             if (achievement.upvote_ids.length >= treshold) {
