@@ -140,7 +140,11 @@ exports.addUserAchievement = (req, res, callback) => {
             }
 
             data.user_achievements = list_achievements;
-            data.subcat_count[subcat_id]=this_subcat_count;
+            if (data.subcat_count) {data.subcat_count[subcat_id]=this_subcat_count}
+            else {
+                data.subcat_count = {};
+                data.subcat_count[subcat_id]=this_subcat_count;
+            }
             return_data = data;
             return data
         } else {
