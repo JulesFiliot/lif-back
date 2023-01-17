@@ -20,6 +20,8 @@ exports.getThreads = (req,res,callback) => {
     //TO REWORK
     try{
         let response = "";
+        const user_id = req.params.user_id ? req.params.user_id.toString() : null;
+
         var ref = admin.database().ref('threads');
         const filter = req.query.filter;
         const page = req.query.page;
@@ -67,9 +69,16 @@ exports.getThreads = (req,res,callback) => {
                 let score = 0;
                 if (value.upvote_ids){
                     score += value.upvote_ids.length;
+                    if (value.upvote_ids.includes(user_id)) {
+                        response[key].voted = 'up'
+                    }
                 }
                 if (value.downvote_ids){
                     score -= value.downvote_ids.length;
+                    if (value.downvote_ids.includes(user_id)) {
+                        response[key].voted = 'down'
+                    }
+
                 }
                 response[key].score = score;
                 delete response[key].upvote_ids;
@@ -128,7 +137,7 @@ exports.voteThread = (req,res,callback) => {
     //{user_id, vote: 'up' ou 'down', 'cancel': true ou false}
     try {
         const thread_id = req.params.thread_id ? req.params.thread_id.toString() : null;
-        const user_id = req.body.user_id ? req.body.user_id.toString() : null;;
+        const user_id = req.body.user_id ? req.body.user_id.toString() : null;
         const vote = req.body.vote.toLowerCase();
         const cancel = req.body.cancel ? req.body.cancel : false;
         let vote_list_ref = "";
